@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer" >
+  <link rel="shortcut icon" href="favicon.svg" type="image/x-icon">
+  <title>极简音乐播放器</title>
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/player.css">
+</head>
+
+<body>
+  <svg>
+    <use xlink:href="./assets/icons.svg"></use>
+  </svg>
+  <div id="app">
+    <div class="player">
+      <div class="info">
+        <div class="text-wrap">
+          <div class="title">歌曲名</div>
+          <div class="artist">作者</div>
+          <div class="lr">歌词</div>
+        </div>
+        <div class="cover">
+        </div>
+      </div>
+      <div class="controls">
+        <div class="btns">
+          <div class="order-btn">
+            <svg class="music-icon icon-order">
+              <use xlink:href="./assets/icons.svg#order" />
+            </svg>
+            <svg class="music-icon icon-repeat hide">
+              <use xlink:href="./assets/icons.svg#repeat" />
+            </svg>
+            <svg class="music-icon icon-rand hide">
+              <use xlink:href="./assets/icons.svg#rand" />
+            </svg>
+          </div>
+          <div class="pre-btn">
+            <svg class="music-icon icon-pre">
+              <use xlink:href="./assets/icons.svg#pre" />
+            </svg>
+          </div>
+          <div class="play-btn">
+            <svg class="music-icon icon-play">
+              <use xlink:href="./assets/icons.svg#play" />
+            </svg>
+            <svg class="music-icon icon-pause hide">
+              <use xlink:href="./assets/icons.svg#pause" />
+            </svg>
+          </div>
+          <div class="next-btn">
+            <svg class="music-icon icon-next">
+              <use xlink:href="./assets/icons.svg#next" />
+            </svg>
+          </div>
+          <div class="vol-btn">
+            <svg class="music-icon icon-loud">
+              <use xlink:href="./assets/icons.svg#loud" />
+            </svg>
+            <svg class="music-icon icon-volume hide">
+              <use xlink:href="./assets/icons.svg#volume" />
+            </svg>
+            <svg class="music-icon icon-quiet hide">
+              <use xlink:href="./assets/icons.svg#quiet" />
+            </svg>
+            <svg class="music-icon icon-mute hide">
+              <use xlink:href="./assets/icons.svg#mute" />
+            </svg>
+            <input type="range" class="vol-progress hide">
+          </div>
+        </div>
+        <div class="progress">
+          <div class="current-bar" style="width: 0%;"></div>
+          <div class="time">
+            <span class="current">1:30</span> / <span class="total">3:06</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="list">
+      <h2>歌曲列表</h2>
+      <ul class="songs">
+      </ul>
+    </div>
+  </div>
+  <script src="./js/main.js"></script>
+</body>
+
+</html>
