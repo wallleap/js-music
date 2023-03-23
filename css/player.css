@@ -4,6 +4,11 @@ body {
   justify-content: center;
   min-height: 100vh;
 }
+
+#myicons {
+  display: none;
+}
+
 #app {
   width: 1270px;
   height: 720px;
@@ -17,6 +22,8 @@ body {
 
 .player {
   position: relative;
+  width: 689px;
+  box-sizing: border-box;
 }
 
 .music-icon {
@@ -26,7 +33,7 @@ body {
 
 .info {
   box-sizing: border-box;
-  width: 689px;
+  width: 100%;
   height: 424px;
   padding: 32px;
   background-color: #fff;
@@ -45,7 +52,11 @@ body {
 }
 
 .transition {
-  transition: transform 1s linear;
+  transition: all 1s linear;
+}
+
+.pause-animation {
+  animation-play-state: paused;
 }
 
 .title {
@@ -72,7 +83,7 @@ body {
 
 .controls {
   box-sizing: border-box;
-  width: 689px;
+  width: 100%;
   height: 200px;
   padding: 32px;
   background-color: #fff;
@@ -127,7 +138,7 @@ body {
 
 .vol-progress {
   position: absolute;
-  top: -68px;
+  top: -76px;
   right: -28px;
   transform: rotate(-90deg);
   cursor: pointer;
@@ -135,6 +146,38 @@ body {
 
 .vol-btn:hover .vol-progress {
   display: block;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  outline: 0;
+  background-color: transparent;
+  width: 140px;
+  border-radius: 3px;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #eee;
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 3px;
+}
+input[type="range" i]::-webkit-slider-container {
+  height: 30px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transform: translateY(-6px);
+  background-color: #7a7a7a;
+  border: 1px solid transparent;
+  border-image: linear-gradient(#333,#333) 0 fill / 6 16 6 0 / 0px 0px 0 200px;
 }
 
 .progress {
@@ -215,6 +258,7 @@ li.song {
   background-color: #333;
   margin-right: 16px;
   overflow: hidden;
+  animation-play-state: paused;
 }
 
 .song-title {
@@ -252,12 +296,15 @@ li.song {
   transform: translate(-50%, -50%);
 }
 
-li.song.current .song-cover {
+li.song .song-cover:hover {
   animation: rotate 3s linear infinite;
 }
 
 @keyframes rotate {
-  0% {
+  to {
+    transform: rotate(1turn);
+  }
+  /* 0% {
     transform: rotate(0deg);
   }
   10% {
@@ -289,7 +336,7 @@ li.song.current .song-cover {
   }
   100% {
     transform: rotate(360deg);
-  }
+  } */
 }
 
 li.song.current .song-btn {
@@ -306,4 +353,51 @@ li.song.current .song-btn .music-icon {
 
 li.song.current .song-btn .music-icon.hide {
   display: block;
+}
+
+@media (max-width: 1270px) {
+  #app {
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .player {
+    width: 100%;
+  }
+  .list {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .cover {
+    top: 80px;
+    width: 30vw;
+    height: 30vw;
+  }
+  .title {
+    width: 6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 508px) {
+  #app {
+    padding: 0;
+  }
+  .info, .controls, .list {
+    margin: 0;
+    border-radius: 0;
+  }
+  .btns {
+    width: 100%;
+  }
+  .btns>div {
+    flex-shrink: 0;
+    padding: 8px;
+  }
 }

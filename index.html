@@ -6,25 +6,24 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer" >
-  <link rel="shortcut icon" href="favicon.svg" type="image/x-icon">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <title>极简音乐播放器</title>
   <link rel="stylesheet" href="./css/reset.css">
   <link rel="stylesheet" href="./css/player.css">
 </head>
 
 <body>
-  <svg>
+  <svg id="myicons">
     <use xlink:href="./assets/icons.svg"></use>
   </svg>
   <div id="app">
     <div class="player">
+      <div class="cover"></div>
       <div class="info">
         <div class="text-wrap">
           <div class="title">歌曲名</div>
           <div class="artist">作者</div>
           <div class="lr">歌词</div>
-        </div>
-        <div class="cover">
         </div>
       </div>
       <div class="controls">
@@ -71,13 +70,16 @@
             <svg class="music-icon icon-mute hide">
               <use xlink:href="./assets/icons.svg#mute" />
             </svg>
-            <input type="range" class="vol-progress hide">
+            <svg class="music-icon icon-menu hide">
+              <use xlink:href="./assets/icons.svg#menu" />
+            </svg>
+            <input type="range" min="0" max="10" value="10" class="vol-progress hide">
           </div>
         </div>
         <div class="progress">
           <div class="current-bar" style="width: 0%;"></div>
           <div class="time">
-            <span class="current">1:30</span> / <span class="total">3:06</span>
+            <span class="current">0:00</span> / <span class="total">3:06</span>
           </div>
         </div>
       </div>
