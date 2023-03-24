@@ -100,7 +100,7 @@ const formatSec = (secTime) => {
 const getRand = (start, end) => {
   return Math.floor(Math.random() * (end - start)) + start
 }
-const getStorage = (key, value = 0) => {
+const getStorage = (key, value) => {
   let result = value
   if (localStorage.getItem(key)) {
     result = localStorage.getItem(key)
@@ -108,12 +108,16 @@ const getStorage = (key, value = 0) => {
     localStorage.setItem(key, value)
   }
   // TODO: 删除
-  console.log(result)
+  if (key !== 'currentTime') {
+    console.log('get', key, result)
+  }
   return result
 }
 const setStorage = (key, value) => {
   // TODO: 删除
-  console.log(value)
+  if (key !== 'currentTime') {
+    console.log('set', key, value)
+  }
   localStorage.setItem(key, value)
 }
 // #endregion
@@ -149,14 +153,38 @@ const $title = $('.title'),
   $volBar = $('.vol-progress')
 // #endregion
 
+// #region 播放前的一些变量和函数
 const audioObj = new Audio()
 let playTimer = null
-let index = parseInt(getStorage('index'), 10)
+let index = parseInt(getStorage('index', 0), 10)
 let angle = 0
-let playFlag = false
-let orderFlag = parseInt(getStorage('orderFlag'), 10)
-let volFlag = parseInt(getStorage('volFlag', '3'))
+let isPlaying = getStorage('isPlaying', 'no')
+let orderFlag = parseInt(getStorage('orderFlag', 0), 10)
+let volFlag = parseInt(getStorage('volFlag', 3))
+let isMuted = getStorage('isMuted', 'no')
+let volValue = parseInt(getStorage('volValue', 10))
 
+const setVolume = () => {
+  audioObj.volume = getStorage('volValue') / 10
+  $$volIcons.forEach((vol, i) => {
+    vol.classList.remove('show')
+  })
+  if (audioObj.volume >= 0.8) { // loud
+    volFlag = 3
+    $loudIcon.classList.add('show')
+  } else if (audioObj.volume >= 0.5) { // volume
+    volFlag = 2
+    $volumeIcon.classList.add('show')
+  } else if (audioObj.volume > 0) { // quiet
+    volFlag = 1
+    $quietIcon.classList.add('show')
+  } else {
+    volFlag = 0
+    $muteIcon.classList.add('show')
+    setStorage('isMuted', 'yes')
+  }
+  setStorage('volFlag', volFlag)
+}
 const setSong = (cindex) => {
   angle = 0
   $title.innerText = playList[cindex].title
@@ -196,17 +224,21 @@ const initPlayer = (cindex) => {
     icon.classList.remove('show')
   })
   $$orderIcons[orderFlag].classList.add('show')
+  if (!$playIcon.classList.contains('hide')) {
+    isPlaying = 'no'
+    setStorage('isPlaying', isPlaying)
+  }
+  $volBar.value = volValue
+  audioObj.volume = volValue / 10
+  setVolume()
   setSong(cindex)
 }
-
-// #region LocalStorage
-
-// #enregion
+// #endregion
 
 // #region 初始化
 initPlayer(index)
 audioObj.addEventListener('canplay', function () {
-  $current.innerText = formatSec(getStorage('currentTime'))
+  $current.innerText = formatSec(getStorage('currentTime', 0))
   $total.innerText = formatSec(audioObj.duration)
   $currentBar.style.width = `${getStorage('currentTime') / audioObj.duration * 100}%`
 })
@@ -218,11 +250,18 @@ const $$song = $$('.song'),
 // #endregion
 
 // #region 封装后面常用的函数
-const palyMusic = (audioObject) => {
+const playMusic = (audioObject, idx) => {
   audioObject.play()
+  $$song[idx].classList.add('current')
+  $cover.classList.add('transition')
+  $pauseIcon.classList.remove('hide')
+  $playIcon.classList.add('hide')
 }
-const pauseMusic = (audioObject) => {
+const pauseMusic = (audioObject, idx) => {
   audioObject.pause()
+  $$song[idx].classList.remove('current')
+  $pauseIcon.classList.add('hide')
+  $playIcon.classList.remove('hide')
 }
 // #endregion
 
@@ -288,49 +327,28 @@ audioObj.addEventListener('ended', function () {
 })
 audioObj.onvolumechange = function () {
   $volBar.value = audioObj.volume * 10
-  $$volIcons.forEach((vol, i) => {
-    vol.classList.add('hide')
-  })
-  if (audioObj.volume >= 0.8) { // loud
-    volFlag = 3
-    setStorage('volFlag', volFlag)
-    $loudIcon.classList.remove('hide')
-  } else if (audioObj.volume >= 0.5) { // volume
-    volFlag = 2
-    $volumeIcon.classList.remove('hide')
-  } else if (audioObj.volume > 0) { // quiet
-    volFlag = 1
-    $quietIcon.classList.remove('hide')
-  } else {
-    $muteIcon.classList.remove('hide')
-  }
-  setStorage('volFlag', volFlag)
+  setVolume()
 }
 // #endregion
 
 // #region 用户触发事件
 $playBtn.onclick = function () {
   audioObj.currentTime = getStorage('currentTime')
-  if ($pauseIcon.classList.contains('hide')) {
-    audioObj.play()
-    $$song[index].classList.add('current')
+  if (getStorage('isPlaying') === 'yes') {
+    pauseMusic(audioObj, parseInt(getStorage('index'), 10))
+    isPlaying = 'no'
   } else {
-    audioObj.pause()
-    $$song[index].classList.remove('current')
+    playMusic(audioObj, parseInt(getStorage('index'), 10))
+    isPlaying = 'yes'
   }
-  $cover.classList.add('transition')
-  $pauseIcon.classList.toggle('hide')
-  $playIcon.classList.toggle('hide')
+  setStorage('isPlaying', isPlaying)
 }
 $preBtn.onclick = function () {
   clearInterval(playTimer)
-  $cover.classList.remove('transition')
   angle = 0
-  $$song.forEach((csong, cindex) => {
+  $$song.forEach((csong) => {
     csong.classList.remove('current')
   })
-  $playIcon.classList.add('hide')
-  $pauseIcon.classList.remove('hide')
   setStorage('currentTime', 0)
   switch (parseInt(getStorage('orderFlag'), 10)) {
     case 0:
@@ -344,20 +362,19 @@ $preBtn.onclick = function () {
       setStorage('index', index)
       break
   }
-  $$song[index].classList.add('current')
+  isPlaying = 'yes'
   setSong(index)
-  audioObj.play()
+  setStorage('isPlaying', isPlaying)
+  setStorage('index', index)
+  playMusic(audioObj, index)
 }
 $nextBtn.onclick = function () {
   clearInterval(playTimer)
-  $cover.classList.remove('transition')
   angle = 0
   audioObj.pause()
-  $$song.forEach((csong, cindex) => {
+  $$song.forEach((csong) => {
     csong.classList.remove('current')
   })
-  $playIcon.classList.add('hide')
-  $pauseIcon.classList.remove('hide')
   setStorage('currentTime', 0)
   switch (parseInt(getStorage('orderFlag'), 10)) {
     case 0:
@@ -371,41 +388,35 @@ $nextBtn.onclick = function () {
       setStorage('index', index)
       break
   }
-  $$song[index].classList.add('current')
+  isPlaying = 'yes'
   setSong(index)
-  audioObj.play()
+  setStorage('index', index)
+  setStorage('isPlaying', isPlaying)
+  playMusic(audioObj, index)
 }
 $$song.forEach((song, currentIndex) => {
   song.onclick = function () {
     clearInterval(playTimer)
-    $$song.forEach((csong, cindex) => {
+    index = parseInt(getStorage('index'), 10)
+    $$song.forEach((csong, idx) => {
       csong.classList.remove('current')
-      audioObj.pause()
-      $pauseIcon.classList.add('hide')
-      $playIcon.classList.remove('hide')
+      pauseMusic(audioObj, idx)
     })
     setSong(currentIndex)
     if (currentIndex === index) {
       audioObj.currentTime = getStorage('currentTime')
-      if (playFlag) {
-        audioObj.play()
-        song.classList.add('current')
-        $pauseIcon.classList.remove('hide')
-        $playIcon.classList.add('hide')
+      if (getStorage('isPlaying') === 'yes') {
+        pauseMusic(audioObj, index)
+        isPlaying = 'no'
       } else {
-        audioObj.pause()
-        song.classList.remove('current')
-        $pauseIcon.classList.add('hide')
-        $playIcon.classList.remove('hide')
+        playMusic(audioObj, index)
+        isPlaying = 'yes'
       }
-      playFlag = !playFlag
+      setStorage('isPlaying', isPlaying)
     } else {
       angle = 0
       setStorage('currentTime', 0)
-      audioObj.play()
-      song.classList.add('current')
-      $pauseIcon.classList.remove('hide')
-      $playIcon.classList.add('hide')
+      playMusic(audioObj, currentIndex)
     }
     index = currentIndex
     setStorage('index', index)
@@ -424,44 +435,50 @@ $orderBtn.addEventListener('click', function () {
   $$orderIcons.forEach((icon) => {
     icon.classList.remove('show')
   })
-  cOrderFlag = (cOrderFlag >= ($$orderIcons.length-1)) ? 0 : (++cOrderFlag)
+  cOrderFlag = (cOrderFlag >= ($$orderIcons.length - 1)) ? 0 : (++cOrderFlag)
   $$orderIcons[cOrderFlag].classList.add('show')
   setStorage('orderFlag', cOrderFlag)
 })
 $volBtn.addEventListener('click', function (e) {
-  if (e.target.classList.contains('music-icon')) {
-    $muteIcon.classList.toggle('hide')
-    switch (parseInt(getStorage('volFlag', '3'))) {
-      case 3:
-        $loudIcon.classList.toggle('hide')
-        break
-      case 2:
-        $volumeIcon.classList.toggle('hide')
-        break
-      case 1:
-        $quietIcon.classList.toggle('hide')
-        break
-    }
-    if (!$muteIcon.classList.contains('hide')) {
-      audioObj.volume = 0
+  let currentVol = getStorage('volValue')
+  let currentMuted = getStorage('isMuted')
+  if (e.target.classList.contains('music-icon') || e.target.classList.contains('vol-btn')) {
+    $$volIcons.forEach((vol) => {
+      vol.classList.remove('show')
+    })
+    /* if (!currentMute === 'yes') {
+      $muteIcon.classList.add('show')
+      audioObj.muted = true
+      isMuted = 'no'
     } else {
-      audioObj.volume = 1
+      $muteIcon.classList.remove('show')
+      audioObj.muted = false
+      isMuted = 'yes'
+      audioObj.volume = currentVol / 10
+      // setVolume()
+    } */
+    console.log(currentMuted, '-----------------------')
+    if(currentMuted === 'no') {
+      isMuted = 'yes'
+      audioObj.muted = true
+      $muteIcon.classList.add('show')
+    } else {
+      isMuted = 'no'
+      audioObj.muted = false
+      $muteIcon.classList.remove('show')
     }
+    console.log(isMuted, '+++++++++++++++++++++++')
+    setStorage('isMuted', isMuted)
   }
 })
 $volBar.oninput = function () {
-  audioObj.volume = this.value / 10
-  $$volIcons.forEach((vol, i) => {
-    vol.classList.add('hide')
-  })
-  if (this.value >= 8) { // loud
-    $loudIcon.classList.remove('hide')
-  } else if (this.value >= 5) { // volume
-    $volumeIcon.classList.remove('hide')
-  } else if (this.value > 0) { // quiet
-    $quietIcon.classList.remove('hide')
-  } else {
-    $muteIcon.classList.remove('hide')
+  volValue = this.value
+  if (volValue === 0) {
+    isMuted = 'yes'
+    setStorage('isMuted', isMuted)
   }
+  audioObj.volume = this.value / 10
+  setStorage('volValue', volValue)
+  setVolume()
 }
 // #endregion
