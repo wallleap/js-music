@@ -119,6 +119,14 @@ body {
   transform: translateY(-50%);
 }
 
+.order-btn .music-icon {
+  display: none;
+}
+
+.order-btn .music-icon.show {
+  display: block;
+}
+
 .btns .play-btn {
   position: relative;
   width: 64px;

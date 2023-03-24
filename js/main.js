@@ -85,6 +85,40 @@ const playList = [
   },
 ]
 
+
+// #region 工具函数，放在前面
+/**
+ * 两个元素，去掉第一个的 hide，增加第二个的 hide 类
+ */
+const changeHideEl = (hideEl, showEl) => {
+  hideEl.classList.remove('hide')
+  showEl.classList.add('hide')
+}
+const formatSec = (secTime) => {
+  return `${parseInt(parseInt(secTime) / 60)}:${parseInt(secTime) % 60 >= 10 ? parseInt(secTime) % 60 : '0' + parseInt(secTime) % 60}`
+}
+const getRand = (start, end) => {
+  return Math.floor(Math.random() * (end - start)) + start
+}
+const getStorage = (key, value = 0) => {
+  let result = value
+  if (localStorage.getItem(key)) {
+    result = localStorage.getItem(key)
+  } else {
+    localStorage.setItem(key, value)
+  }
+  // TODO: 删除
+  console.log(result)
+  return result
+}
+const setStorage = (key, value) => {
+  // TODO: 删除
+  console.log(value)
+  localStorage.setItem(key, value)
+}
+// #endregion
+
+// #region 已加载的 DOM 元素获取
 const $ = el => document.querySelector(el)
 const $$ = els => document.querySelectorAll(els)
 const $title = $('.title'),
@@ -101,38 +135,39 @@ const $title = $('.title'),
   $total = $('.time>.total'),
   $songs = $('.songs'),
   $orderBtn = $('.order-btn'),
+  $$orderIcons = $orderBtn.querySelectorAll('.music-icon'),
   $orderIcon = $('.icon-order'),
   $repeatIcon = $('.icon-repeat'),
   $randIcon = $('.icon-rand'),
   $volBtn = $('.vol-btn'),
-  $$volIcons = $$('.vol-btn>.music-icon')
+  $$volIcons = $$('.vol-btn>.music-icon'),
   $loudIcon = $('.icon-loud'),
   $volumeIcon = $('.icon-volume'),
   $quietIcon = $('.icon-quiet'),
   $muteIcon = $('.icon-mute'),
   $menuIcon = $('.icon-menu'),
   $volBar = $('.vol-progress')
+// #endregion
 
 const audioObj = new Audio()
 let playTimer = null
-let index = 0
+let index = parseInt(getStorage('index'), 10)
 let angle = 0
 let playFlag = false
-let orderFlag = 0
-let volFlag = 3
+let orderFlag = parseInt(getStorage('orderFlag'), 10)
+let volFlag = parseInt(getStorage('volFlag', '3'))
 
-const setSong = (index) => {
-  $current.innerText = '0:00'
+const setSong = (cindex) => {
   angle = 0
-  $title.innerText = playList[index].title
-  $artist.innerText = playList[index].artist
-  audioObj.src = playList[index].link
-  $cover.style.backgroundImage = `url(${playList[index].cover})`
+  $title.innerText = playList[cindex].title
+  $artist.innerText = playList[cindex].artist
+  audioObj.src = playList[cindex].link
+  $cover.style.backgroundImage = `url(${playList[cindex].cover})`
 }
-
-const initPlayer = (index) => {
+const initPlayer = (cindex) => {
+  clearInterval(playTimer)
   let $fragment = document.createDocumentFragment()
-  playList.forEach((song, index) => {
+  playList.forEach(song => {
     let $songItem = document.createElement('li')
     $songItem.classList.add('song')
     $songItem.innerHTML = `
@@ -157,30 +192,125 @@ const initPlayer = (index) => {
     $fragment.appendChild($songItem)
   })
   $songs.append($fragment)
-  setSong(index)
+  $$orderIcons.forEach((icon) => {
+    icon.classList.remove('show')
+  })
+  $$orderIcons[orderFlag].classList.add('show')
+  setSong(cindex)
 }
 
+// #region LocalStorage
 
-/**
- * 两个元素，去掉第一个的 hide，增加第二个的 hide 类
- */
-const changeHideEl = (hideEl, showEl) => {
-  hideEl.classList.remove('hide')
-  showEl.classList.add('hide')
-}
-const formatSec = (secTime) => {
-  return `${parseInt(parseInt(secTime) / 60)}:${parseInt(secTime) % 60 >= 10 ? parseInt(secTime) % 60 : '0' + parseInt(secTime) % 60}`
-}
-const getRand = (start, end) => {
-  return Math.floor(Math.random() * (end - start)) + start
-}
+// #enregion
 
+// #region 初始化
 initPlayer(index)
+audioObj.addEventListener('canplay', function () {
+  $current.innerText = formatSec(getStorage('currentTime'))
+  $total.innerText = formatSec(audioObj.duration)
+  $currentBar.style.width = `${getStorage('currentTime') / audioObj.duration * 100}%`
+})
+// #endregion
 
+// #region 初始化后才有的 DOM 元素
 const $$song = $$('.song'),
   $songBtn = $(`.song-btn`)
+// #endregion
 
+// #region 封装后面常用的函数
+const palyMusic = (audioObject) => {
+  audioObject.play()
+}
+const pauseMusic = (audioObject) => {
+  audioObject.pause()
+}
+// #endregion
+
+// #region 系统事件
+audioObj.addEventListener('playing', function () {
+  clearInterval(playTimer)
+  $cover.classList.add('transition')
+  $total.innerText = formatSec(audioObj.duration)
+  playTimer = setInterval(function () {
+    setStorage('currentTime', audioObj.currentTime)
+    $current.innerText = formatSec(audioObj.currentTime)
+    $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
+    angle += 180
+    $cover.style.transform = `rotate(${angle}deg)`
+  }, 1000)
+})
+audioObj.addEventListener('pause', function () {
+  clearInterval(playTimer)
+  $cover.style.transform = `rotate(${angle}deg)`
+  $$song.forEach((csong) => {
+    csong.classList.remove('current')
+  })
+  $pauseIcon.classList.add('hide')
+  $playIcon.classList.remove('hide')
+})
+audioObj.addEventListener('ended', function () {
+  clearInterval(playTimer)
+  $$song.forEach((csong) => {
+    csong.classList.remove('current')
+  })
+  $pauseIcon.classList.add('hide')
+  $playIcon.classList.remove('hide')
+  angle = 0
+  audioObj.pause()
+  $$song[index].classList.remove('current')
+  switch (parseInt(getStorage('orderFlag'), 10)) {
+    case 0:
+      index = index >= playList.length - 1 ? index = 0 : ++index
+      setStorage('index', index)
+      setSong(index)
+      audioObj.play()
+      $playIcon.classList.add('hide')
+      $pauseIcon.classList.remove('hide')
+      $$song[index].classList.add('current')
+      break
+    case 1:
+      setSong(index)
+      audioObj.play()
+      $playIcon.classList.add('hide')
+      $pauseIcon.classList.remove('hide')
+      $$song[index].classList.add('current')
+      break
+    case 2:
+      index = getRand(0, playList.length)
+      setStorage('index', index)
+      setSong(index)
+      audioObj.play()
+      $playIcon.classList.add('hide')
+      $pauseIcon.classList.remove('hide')
+      $$song[index].classList.add('current')
+      break
+  }
+})
+audioObj.onvolumechange = function () {
+  $volBar.value = audioObj.volume * 10
+  $$volIcons.forEach((vol, i) => {
+    vol.classList.add('hide')
+  })
+  if (audioObj.volume >= 0.8) { // loud
+    volFlag = 3
+    setStorage('volFlag', volFlag)
+    $loudIcon.classList.remove('hide')
+  } else if (audioObj.volume >= 0.5) { // volume
+    volFlag = 2
+    $volumeIcon.classList.remove('hide')
+  } else if (audioObj.volume > 0) { // quiet
+    volFlag = 1
+    $quietIcon.classList.remove('hide')
+  } else {
+    $muteIcon.classList.remove('hide')
+  }
+  setStorage('volFlag', volFlag)
+}
+// #endregion
+
+// #region 用户触发事件
 $playBtn.onclick = function () {
+  audioObj.currentTime = getStorage('currentTime')
   if ($pauseIcon.classList.contains('hide')) {
     audioObj.play()
     $$song[index].classList.add('current')
@@ -201,14 +331,17 @@ $preBtn.onclick = function () {
   })
   $playIcon.classList.add('hide')
   $pauseIcon.classList.remove('hide')
-  switch (orderFlag) {
+  setStorage('currentTime', 0)
+  switch (parseInt(getStorage('orderFlag'), 10)) {
     case 0:
     case 1:
-      index === 0 ? index = playList.length - 1 : index--
+      index = index === 0 ? index = playList.length - 1 : --index
+      setStorage('index', index)
       break
     case 2:
       let randNum = getRand(0, playList.length)
       index = (randNum === index ? (index === 0 ? index = playList.length - 1 : --index) : randNum)
+      setStorage('index', index)
       break
   }
   $$song[index].classList.add('current')
@@ -225,93 +358,22 @@ $nextBtn.onclick = function () {
   })
   $playIcon.classList.add('hide')
   $pauseIcon.classList.remove('hide')
-  switch (orderFlag) {
+  setStorage('currentTime', 0)
+  switch (parseInt(getStorage('orderFlag'), 10)) {
     case 0:
     case 1:
-      index >= playList.length - 1 ? index = 0 : index++
+      index = index >= playList.length - 1 ? index = 0 : ++index
+      setStorage('index', index)
       break
     case 2:
       let randNum = getRand(0, playList.length)
       index = (randNum === index ? (index >= playList.length - 1 ? index = 0 : ++index) : randNum)
+      setStorage('index', index)
       break
   }
   $$song[index].classList.add('current')
   setSong(index)
   audioObj.play()
-}
-audioObj.addEventListener('playing', function () {
-  $cover.classList.add('transition')
-  $total.innerText = formatSec(audioObj.duration)
-  playTimer = setInterval(function () {
-    $current.innerText = formatSec(audioObj.currentTime)
-    $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
-    angle += 180
-    $cover.style.transform = `rotate(${angle}deg)`
-  }, 1000)
-})
-audioObj.addEventListener('pause', function () {
-  clearInterval(playTimer)
-  $cover.style.transform = `rotate(${angle}deg)`
-  $$song.forEach((csong, cindex) => {
-    csong.classList.remove('current')
-  })
-  audioObj.pause()
-  $pauseIcon.classList.add('hide')
-  $playIcon.classList.remove('hide')
-})
-audioObj.addEventListener('ended', function () {
-  clearInterval(playTimer)
-  $$song.forEach((csong, cindex) => {
-    csong.classList.remove('current')
-  })
-  $pauseIcon.classList.add('hide')
-  $playIcon.classList.remove('hide')
-  angle = 0
-  audioObj.pause()
-  $$song[index].classList.remove('current')
-  switch (orderFlag) {
-    case 0:
-      index >= playList.length - 1 ? index = 0 : index++
-      setSong(index)
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-    case 1:
-      setSong(index)
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-    case 2:
-      index = getRand(0, playList.length)
-      setSong(index)
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-  }
-})
-audioObj.onvolumechange = function () {
-  $volBar.value = audioObj.volume * 10
-  $$volIcons.forEach((vol, i)=>{
-    vol.classList.add('hide')
-  })
-  if (audioObj.volume >= 0.8) { // loud
-    volFlag = 3
-    $loudIcon.classList.remove('hide')
-  } else if (audioObj.volume >= 0.5) { // volume
-    volFlag = 2
-    $volumeIcon.classList.remove('hide')
-  } else if (audioObj.volume > 0) { // quiet
-    volFlag = 1
-    $quietIcon.classList.remove('hide')
-  } else {
-    $muteIcon.classList.remove('hide')
-  }
 }
 $$song.forEach((song, currentIndex) => {
   song.onclick = function () {
@@ -324,7 +386,7 @@ $$song.forEach((song, currentIndex) => {
     })
     setSong(currentIndex)
     if (currentIndex === index) {
-      console.log(playFlag)
+      audioObj.currentTime = getStorage('currentTime')
       if (playFlag) {
         audioObj.play()
         song.classList.add('current')
@@ -339,50 +401,37 @@ $$song.forEach((song, currentIndex) => {
       playFlag = !playFlag
     } else {
       angle = 0
+      setStorage('currentTime', 0)
       audioObj.play()
       song.classList.add('current')
       $pauseIcon.classList.remove('hide')
       $playIcon.classList.add('hide')
     }
     index = currentIndex
+    setStorage('index', index)
   }
 })
 $progress.addEventListener('click', function (event) {
   let per = (event.offsetX / this.clientWidth) * 100 + "%"
   $currentBar.style.width = per
   audioObj.currentTime = audioObj.duration * event.offsetX / this.clientWidth
+  setStorage('currentTime', audioObj.currentTime)
   $current.innerText = formatSec(audioObj.currentTime)
   $total.innerText = formatSec(audioObj.duration)
 })
 $orderBtn.addEventListener('click', function () {
-  if (orderFlag >= 3) {
-    orderFlag = 0
-  }
-  switch (orderFlag) {
-    case 0:
-      $orderIcon.classList.add('hide')
-      $repeatIcon.classList.remove('hide')
-      $randIcon.classList.add('hide')
-      break
-    case 1:
-      $orderIcon.classList.add('hide')
-      $repeatIcon.classList.add('hide')
-      $randIcon.classList.remove('hide')
-      break
-    case 2:
-      $orderIcon.classList.remove('hide')
-      $repeatIcon.classList.add('hide')
-      $randIcon.classList.add('hide')
-      break
-  }
-  orderFlag++
+  let cOrderFlag = parseInt(getStorage('orderFlag'), 10)
+  $$orderIcons.forEach((icon) => {
+    icon.classList.remove('show')
+  })
+  cOrderFlag = (cOrderFlag >= ($$orderIcons.length-1)) ? 0 : (++cOrderFlag)
+  $$orderIcons[cOrderFlag].classList.add('show')
+  setStorage('orderFlag', cOrderFlag)
 })
 $volBtn.addEventListener('click', function (e) {
-  console.log('clicked')
-
   if (e.target.classList.contains('music-icon')) {
     $muteIcon.classList.toggle('hide')
-    switch (volFlag) {
+    switch (parseInt(getStorage('volFlag', '3'))) {
       case 3:
         $loudIcon.classList.toggle('hide')
         break
@@ -402,7 +451,7 @@ $volBtn.addEventListener('click', function (e) {
 })
 $volBar.oninput = function () {
   audioObj.volume = this.value / 10
-  $$volIcons.forEach((vol, i)=>{
+  $$volIcons.forEach((vol, i) => {
     vol.classList.add('hide')
   })
   if (this.value >= 8) { // loud
@@ -415,3 +464,4 @@ $volBar.oninput = function () {
     $muteIcon.classList.remove('hide')
   }
 }
+// #endregion
