@@ -49,6 +49,7 @@ body {
   height: 240px;
   border-radius: 120px;
   overflow: hidden;
+  z-index: 2;
 }
 
 .transition {
@@ -90,6 +91,34 @@ body {
 
 .lyric-inner {
   transition: transform 0.1s ease-out 0s;
+}
+
+.lyric-inner p {
+  width: 100%;
+}
+
+.lyric-inner p span {
+  display: inline-block;
+  width: 300%;
+}
+
+.lyric-inner p.on span {
+  animation: moveLeft 10s ease infinite;
+}
+
+@keyframes moveLeft {
+  0% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  75% {
+    transform: translateX(-70%);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .lyric-inner p.on {

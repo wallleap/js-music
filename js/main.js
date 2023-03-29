@@ -104,6 +104,11 @@ const playList = [
 const formatSec = (secTime) => {
   return `${parseInt(parseInt(secTime) / 60)}:${parseInt(secTime) % 60 >= 10 ? parseInt(secTime) % 60 : '0' + parseInt(secTime) % 60}`
 }
+const formatTime = (time) => {
+  let min = parseInt(time.split(':')[0])
+  let sec = parseInt(time.split(':')[1].split('.')[0]) + parseFloat(time.split(':')[1].split('.')[1]) * 0.01
+  return min * 60 + sec
+}
 const getRand = (start, end) => {
   return Math.floor(Math.random() * (end - start)) + start
 }
@@ -264,21 +269,21 @@ const setSong = (cIndex) => {
 }
 const getLyric = cIndex => {
   let lrcs = []
-  if(!playList[cIndex].lyric) {
-    lrcs.push(JSON.parse(`{"time": "00:00.00", "text": "此歌曲暂时没有适配歌词"}`))
+  if (!playList[cIndex].lyric) {
+    lrcs.push(JSON.parse(`{"time": "${formatTime('00:00.00')}", "text": "此歌曲暂时没有适配歌词"}`))
   } else {
     let lrcArr = decodeBase64(playList[cIndex].lyric).split('\n')
     lrcArr.forEach((item) => {
       let temp = item.split('\]')
-      if(temp[1]) {
-        lrcs.push(JSON.parse(`{"time": "${temp[0].slice(1)}", "text": "${temp[1]}"}`))
+      if (temp[1]) {
+        lrcs.push(JSON.parse(`{"time": "${formatTime(temp[0].slice(1))}", "text": "${temp[1]}"}`))
       }
     })
   }
   return lrcs
 }
 const setLyricInner = cIndex => {
-  if($('.lyric-inner')) {
+  if ($('.lyric-inner')) {
     $('.lyric-inner').remove()
   }
   let lyricArr = getLyric(cIndex)
@@ -288,14 +293,61 @@ const setLyricInner = cIndex => {
   $lyricInner.style.transform = "translateY(80px)"
   lyricArr.forEach((lrc, idx) => {
     let $lrc = document.createElement('p')
-    $lrc.textContent = lrc.text
-    if(idx === 0) {
-      $lrc.classList.add('on')
-    }
+    let $text = document.createElement('span')
+    $text.textContent = lrc.text
+    $lrc.classList.add('on')
+    $lrc.append($text)
     $lrcFragment.append($lrc)
   })
   $lyricInner.append($lrcFragment)
   $lyricBox.append($lyricInner)
+}
+const initLyric = () => {
+  let lrcs = getLyric(parseInt(getStorage('index'), 10))
+  let cTime = getStorage('currentTime')
+  $$('.lyric-inner p').forEach(($lrc) => {
+    if ($lrc.classList.contains('on')) {
+      $lrc.classList.remove('on')
+    }
+  })
+  lrcs.forEach((lrc, idx) => {
+    if (cTime === 0) {
+      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+    }
+    if (idx < (lrcs.length - 1)) {
+      if (lrc.time <= cTime && cTime <= lrcs[idx + 1].time) {
+        $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+        $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
+      }
+    }
+    if (cTime >= (lrcs[lrcs.length - 1].time)) {
+      $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+    }
+  })
+}
+const updateLyric = () => {
+  let lrcs = getLyric(parseInt(getStorage('index'), 10))
+  $$('.lyric-inner p').forEach(($lrc) => {
+    if ($lrc.classList.contains('on')) {
+      $lrc.classList.remove('on')
+    }
+  })
+  lrcs.forEach((lrc, idx) => {
+    if (audioObj.currentTime === 0) {
+      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+    }
+    if (idx < (lrcs.length - 1)) {
+      if (lrc.time <= audioObj.currentTime && audioObj.currentTime <= lrcs[idx + 1].time) {
+        $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+        $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
+      }
+    }
+    if (audioObj.currentTime >= (lrcs[lrcs.length - 1].time)) {
+      $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+    }
+  })
 }
 const initPlayer = (cIndex) => {
   clearInterval(playTimer)
@@ -326,6 +378,7 @@ const initPlayer = (cIndex) => {
   })
   $songs.append($fragment)
   setLyricInner(cIndex)
+  initLyric()
   $$orderIcons.forEach((icon) => {
     icon.classList.remove('show')
   })
@@ -375,9 +428,11 @@ const pauseMusic = (audioObject, idx) => {
 // #region 系统事件
 audioObj.addEventListener('playing', function () {
   clearInterval(playTimer)
+  let lrcs = getLyric(parseInt(getStorage('index'), 10))
   $cover.classList.add('transition')
   $total.innerText = formatSec(audioObj.duration)
   playTimer = setInterval(function () {
+    updateLyric()
     setStorage('currentTime', audioObj.currentTime)
     $current.innerText = formatSec(audioObj.currentTime)
     $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
@@ -414,6 +469,7 @@ audioObj.addEventListener('ended', function () {
         setStorage('index', index)
         setSong(index)
         setLyricInner(index)
+        updateLyric()
         audioObj.play()
         $playIcon.classList.add('hide')
         $pauseIcon.classList.remove('hide')
@@ -425,6 +481,7 @@ audioObj.addEventListener('ended', function () {
       setStorage('index', index)
       setSong(index)
       setLyricInner(index)
+      updateLyric()
       audioObj.play()
       $playIcon.classList.add('hide')
       $pauseIcon.classList.remove('hide')
@@ -433,6 +490,7 @@ audioObj.addEventListener('ended', function () {
     case 2:
       setSong(index)
       setLyricInner(index)
+      updateLyric()
       audioObj.play()
       $playIcon.classList.add('hide')
       $pauseIcon.classList.remove('hide')
@@ -443,6 +501,7 @@ audioObj.addEventListener('ended', function () {
       setStorage('index', index)
       setSong(index)
       setLyricInner(index)
+      updateLyric()
       audioObj.play()
       $playIcon.classList.add('hide')
       $pauseIcon.classList.remove('hide')
@@ -491,6 +550,7 @@ $preBtn.onclick = function () {
   isPlaying = 'yes'
   setSong(index)
   setLyricInner(index)
+  updateLyric()
   setStorage('isPlaying', isPlaying)
   setStorage('index', index)
   playMusic(audioObj, index)
@@ -519,6 +579,7 @@ $nextBtn.onclick = function () {
   isPlaying = 'yes'
   setSong(index)
   setLyricInner(index)
+  updateLyric()
   setStorage('index', index)
   setStorage('isPlaying', isPlaying)
   playMusic(audioObj, index)
@@ -549,6 +610,7 @@ $$song.forEach((song, currentIndex) => {
     }
     index = currentIndex
     setLyricInner(index)
+    updateLyric()
     setStorage('index', index)
   }
 })
