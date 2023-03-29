@@ -436,8 +436,8 @@ audioObj.addEventListener('playing', function () {
     setStorage('currentTime', audioObj.currentTime)
     $current.innerText = formatSec(audioObj.currentTime)
     $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
-    angle += 180
-    $cover.style.transform = `rotate(${angle}deg)`
+    // angle += 180
+    // $cover.style.transform = `rotate(${angle}deg)`
   }, 1000)
 })
 audioObj.addEventListener('pause', function () {
