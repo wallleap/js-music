@@ -209,13 +209,13 @@ let isPlaying = getStorage('isPlaying', 'no')
 let orderFlag = parseInt(getStorage('orderFlag', 0), 10)
 let volFlag = parseInt(getStorage('volFlag', 3))
 let isMuted = getStorage('isMuted', 'no')
-let volValue = parseInt(getStorage('volValue', 10))
+let volValue = getStorage('volValue', 1)
 let orderList = ['顺序播放', '列表循环', '单曲循环', '随机播放']
 let isDraging = false
 let dragTimer = null
 
 const setVolume = () => {
-  audioObj.volume = getStorage('volValue') / 10
+  audioObj.volume = getStorage('volValue')
   isMuted = 'no'
   $$volIcons.forEach((vol, i) => {
     vol.classList.remove('show')
@@ -281,7 +281,7 @@ const initPlayer = (cIndex) => {
     setStorage('isPlaying', isPlaying)
   }
   $volBar.value = volValue
-  audioObj.volume = volValue / 10
+  audioObj.volume = volValue
   setVolume()
   setSong(cIndex)
 }
@@ -392,7 +392,7 @@ audioObj.addEventListener('ended', function () {
   }
 })
 audioObj.onvolumechange = function () {
-  $volBar.value = audioObj.volume * 10
+  $volBar.value = audioObj.volume
   setVolume()
 }
 // #endregion
@@ -572,7 +572,7 @@ $volBtn.addEventListener('click', function (e) {
       isMuted = 'no'
       audioObj.muted = false
       $muteIcon.classList.remove('show')
-      audioObj.volume = currentVol / 10
+      audioObj.volume = currentVol
     }
     setStorage('isMuted', isMuted)
   }
@@ -583,7 +583,7 @@ $volBar.oninput = function () {
     isMuted = 'yes'
     setStorage('isMuted', isMuted)
   }
-  audioObj.volume = this.value / 10
+  audioObj.volume = this.value
   setStorage('volValue', volValue)
   setVolume()
 }
