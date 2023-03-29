@@ -4,6 +4,7 @@ const playList = [
     artist: 'Tamas Wells',
     link: '//cdn.wallleap.cn/musics/1.mp3',
     cover: 'https://cdn.wallleap.cn/musics/1.jpg',
+    lyric: 'WzAwOjAwLjAwXVZhbGRlciBGaWVsZHMgLSBUYW1hcyBXZWxscwpbMDA6MDIuMDNdSSB3YXMgZm91bmQgb24gdGhlIGdyb3VuZCBieSB0aGUgZm91bnRhaW4gYXQgVmFsZGVyClswMDowNy4zNl1GaWVsZHMgYW5kIHdhcyBhbG1vc3QgZHJ5ClswMDoxMC40N11MeWluZyBpbiB0aGUgc3VuIGFmdGVyIEkgaGFkIHRyaWVkClswMDoxMy45MF0KWzAwOjE0LjUwXUx5aW5nIGluIHRoZSBzdW4gYnkgdGhlIHNpZGUKWzAwOjIxLjYzXVdlIGhhZCBhZ3JlZWQgdGhhdCB0aGUgY291bmNpbCB3b3VsZCBlbmQgYXQKWzAwOjI1Ljc3XVRocmVlIGhvdXJzIG92ZXIgdGltZQpbMDA6MjguODJdU2hvZWxhY2VzIHdlcmUgdGllZCBhdCB0aGUgdHJhZmZpYyBsaWdodHMKWzAwOjMyLjI0XQpbMDA6MzIuODZdSSB3YXMgcnVubmluZyBsYXRlIEkgY291bGQgYXBwbHkKWzAwOjM4Ljc0XQpbMDA6MzkuMzFdRm9yIGFub3RoZXIgb25lIEkgZ3Vlc3MKWzAwOjQyLjY2XQpbMDA6NDMuMThdSWYgZGVwYXJ0bWVudCBzdG9yZXMgYXJlIGJlc3QKWzAwOjQ2Ljg2XQpbMDA6NDcuMzZdVGhleSBzYWlkIHRoZXJlIHdvdWxkIGJlIGRlbGF5cyAKWzAwOjUxLjY3XU9ubHkgdGVtcG9yYXJ5IHBheQpbMDA6NTUuNDldClswMTozNC43N11Gb3IgYW5vdGhlciBvbmUgSSBndWVzcwpbMDE6MzguNjBdSWYgZGVwYXJ0bWVudCBzdG9yZXMgYXJlIGJlc3QKWzAxOjQyLjY1XVRoZXkgc2FpZCB0aGVyZSB3b3VsZCBiZSBkZWxheXMgClswMTo0Ni45NV1Pbmx5IHRlbXBvcmFyeSBwYXkKWzAxOjUwLjQ2XQpbMDE6NTEuODhdU2hlIHdhcyBmb3VuZCBvbiB0aGUgZ3JvdW5kIGluIGEgZ293biBtYWRlIGF0IFZhbGRlcgpbMDE6NTguMjZdRmllbGRzIGFuZCB3YXMgc291bmQgYXNsZWVwClswMjowMC43Ml0KWzAyOjAxLjI3XU9uIHRoZSBzdGFpcnMgb3V0c2lkZSB0aGUgZG9vciB0byB0aGUgbWFuIHdobyBjcmllZApbMDI6MDQuNzldClswMjowNS4zNV1XaGVuIGhlIHNhaWQgdGhhdCBoZSBsb3ZlZCBoaXMgbGlmZQpbMDI6MTEuMDldClswMjoxMi40OV1XZSBoYWQgYWdyZWVkIHRoYXQgdGhlIGNvdW5jaWwgc2hvdWxkIHRha2UgaGlzClswMjoxNi42N11LZXlzIHRvIHRoZSBiZWRyb29tIGRvb3IKWzAyOjE5LjE1XQpbMDI6MTkuNjldSW5jYXNlIGhlIHNsZWVwZWQgb3V0c2lkZSBhbmQgd2FzIGZvdW5kIGluIHR3bwpbMDI6MjMuMTBdClswMjoyMy42N11EYXlzIGluIFZhbGRlciBmaWVsZHMgd2l0aCBhIG1vdW50YWluIHZpZXcK'
   },
   {
     title: '仰望',
@@ -16,6 +17,7 @@ const playList = [
     artist: '太一',
     link: '//cdn.wallleap.cn/musics/3.mp3',
     cover: '//cdn.wallleap.cn/musics/3.jpg',
+    lyric: ''
   },
   {
     title: '藏',
@@ -165,6 +167,9 @@ const setTips = (text, type) => {
     clearTimeout(tipTimer)
   }, 1000)
 }
+const decodeBase64 = (str) => {
+  return decodeURIComponent(escape(window.atob(str)));
+}
 // #endregion
 
 // #region 已加载的 DOM 元素获取
@@ -184,6 +189,7 @@ const $title = $('.title'),
   $current = $('.time>.current'),
   $total = $('.time>.total'),
   $songs = $('.songs'),
+  $lyricInner = $('.lyric-inner'),
   $orderBtn = $('.order-btn'),
   $$orderIcons = $orderBtn.querySelectorAll('.music-icon'),
   $orderIcon = $('.icon-order'),
@@ -244,9 +250,23 @@ const setSong = (cIndex) => {
   audioObj.src = playList[cIndex].link
   $cover.style.backgroundImage = `url(${playList[cIndex].cover})`
 }
+const getLyric = cIndex => {
+  let lrcArr = decodeBase64(playList[cIndex].lyric).split('\n')
+  let lrcs = []
+  lrcArr.forEach((item) => {
+    let temp = item.split('\]')
+    if(temp[1]) {
+      lrcs.push(JSON.parse(`{"time": "${temp[0].slice(1)}", "text": "${temp[1]}"}`))
+    }
+  })
+  return lrcs
+}
+let lyricArr = getLyric(0)
+console.log(lyricArr[0]);
 const initPlayer = (cIndex) => {
   clearInterval(playTimer)
   let $fragment = document.createDocumentFragment()
+  let $lrcFragment = document.createDocumentFragment()
   playList.forEach(song => {
     let $songItem = document.createElement('li')
     $songItem.classList.add('song')
@@ -272,6 +292,13 @@ const initPlayer = (cIndex) => {
     $fragment.appendChild($songItem)
   })
   $songs.append($fragment)
+  lyricArr.forEach(lrc => {
+    let $lrc = document.createElement('p')
+    $lrc.textContent = lrc.text
+    $lrcFragment.append($lrc)
+  })
+  $lyricInner.append($lrcFragment)
+  $lyricInner.querySelector('p').classList.add('on')
   $$orderIcons.forEach((icon) => {
     icon.classList.remove('show')
   })
@@ -298,7 +325,8 @@ audioObj.addEventListener('canplay', function () {
 
 // #region 初始化后才有的 DOM 元素
 const $$song = $$('.song'),
-  $songBtn = $(`.song-btn`)
+  $songBtn = $(`.song-btn`),
+  $$lrcs = $$('.lyric-inner>p')
 // #endregion
 
 // #region 封装后面常用的函数

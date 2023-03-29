@@ -73,12 +73,29 @@ body {
   margin-top: 8px;
 }
 
-.lr {
-  font-size: 24px;
-  line-height: 1.5;
+.lyric {
+  font-size: 18px;
+  line-height: 2.5;
   margin-top: 16px;
   color: #ccc;
   min-height: 216px;
+}
+
+.lyric-box {
+  width: 100%;
+  height: 284px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg,hsla(0,0%,100%,0) 0,hsla(0,0%,100%,.6) 15%,#fff 25%,#fff 75%,hsla(0,0%,100%,.6) 85%,hsla(0,0%,100%,0));
+}
+
+.lyric-inner {
+  transition: transform 0.1s ease-out 0s;
+}
+
+.lyric-inner p.on {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
 }
 
 .controls {
