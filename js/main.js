@@ -314,12 +314,12 @@ const initLyric = () => {
     }
     if (idx < (lrcs.length - 1)) {
       if (lrc.time <= cTime && cTime <= lrcs[idx + 1].time) {
-        $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
         $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
       }
     }
     if (cTime >= (lrcs[lrcs.length - 1].time)) {
-      $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+      $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
       $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
     }
   })
@@ -337,12 +337,12 @@ const updateLyric = () => {
     }
     if (idx < (lrcs.length - 1)) {
       if (lrc.time <= audioObj.currentTime && audioObj.currentTime <= lrcs[idx + 1].time) {
-        $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
         $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
       }
     }
     if (audioObj.currentTime >= (lrcs[lrcs.length - 1].time)) {
-      $('.lyric-inner').style.transform = `translateY(${80 - 45 * idx}px)`
+      $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
       $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
     }
   })

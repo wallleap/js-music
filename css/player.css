@@ -90,7 +90,7 @@ body {
 }
 
 .lyric {
-  font-size: 18px;
+  font-size: 14px;
   line-height: 2.5;
   margin-top: 16px;
   color: #ccc;
@@ -105,42 +105,25 @@ body {
 }
 
 .lyric-inner {
-  transition: transform 0.1s ease-out 0s;
+  transition: transform .6s ease-out 0s;
 }
 
 .lyric-inner p {
   width: 100%;
+  transition: all .2s;
 }
 
 .lyric-inner p span {
   display: inline-block;
   width: 300%;
-}
-
-.lyric-inner p.on span {
-  animation: moveLeft 10s ease infinite;
-}
-
-@keyframes moveLeft {
-  0% {
-    transform: translateX(0%);
-  }
-  50% {
-    transform: translateX(0%);
-  }
-  75% {
-    transform: translateX(-70%);
-  }
-  100% {
-    transform: translateX(0);
-  }
+  transition: all .1s;
 }
 
 .lyric-inner p.on {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: bold;
   color: #333;
-  transform: translateX(.8em);
+  transform: translateX(.4em);
 }
 
 .controls {
