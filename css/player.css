@@ -37,13 +37,13 @@ body {
   width: 1270px;
   height: 720px;
   display: flex;
-  background: linear-gradient(to bottom right,rgba(255,255,255,.3), rgba(255,255,255,.7));
+  background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
   border: 1px solid #ffffffb5;
   backdrop-filter: blur(16px);
   box-sizing: border-box;
   padding: 32px;
   border-radius: 32px;
-  box-shadow: 10px 10px 32px rgba(0,0,0,.1);
+  box-shadow: 10px 10px 32px rgba(0, 0, 0, .1);
 }
 
 .player {
@@ -55,6 +55,12 @@ body {
 .music-icon {
   width: 40px;
   height: 40px;
+  fill: rgba(255, 255, 255, .5);
+  transition: all .3s;
+}
+
+.music-icon:hover {
+  fill: #fff;
 }
 
 .info {
@@ -84,6 +90,7 @@ body {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -127,7 +134,7 @@ body {
   width: 100%;
   height: 316px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(180deg,hsla(0,0%,100%,0) 0,hsla(0,0%,100%,.6) 15%,#fff 25%,#fff 75%,hsla(0,0%,100%,.6) 85%,hsla(0,0%,100%,0));
+  -webkit-mask-image: linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, hsla(0, 0%, 100%, .6) 15%, #fff 25%, #fff 75%, hsla(0, 0%, 100%, .6) 85%, hsla(0, 0%, 100%, 0));
 }
 
 .lyric-inner {
@@ -197,7 +204,9 @@ body {
   cursor: pointer;
 }
 
-.order-btn svg, .play-btn svg, .vol-btn svg {
+.order-btn svg,
+.play-btn svg,
+.vol-btn svg {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -215,9 +224,14 @@ body {
   position: relative;
   width: 64px;
   height: 64px;
-  background-color: #333;
+  background-color: rgba(255, 255, 255, .5);
   border-radius: 32px;
   padding: 0;
+  transition: all .3s;
+}
+
+.btns .play-btn:hover {
+  background: #ffffffaf;
 }
 
 .play-btn svg {
@@ -229,31 +243,34 @@ body {
 }
 
 input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    margin: 0;
-    outline: 0;
-    background-color: transparent;
-    width: 500px;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  outline: 0;
+  background-color: transparent;
+  width: 500px;
 }
+
 input[type="range"]::-webkit-slider-runnable-track {
-    height: 4px;
-    background: #eee;
+  height: 4px;
+  background: rgba(255, 255, 255, .3);
 }
+
 input[type="range" i]::-webkit-slider-container {
-    height: 40px;
-    overflow: hidden;
+  height: 40px;
+  overflow: hidden;
 }
+
 input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: #333;
-    border: 1px solid transparent;
-    margin-top: -8px;
-    border-image: linear-gradient(#333,#333) 0 fill / 8 20 8 0 / 0px 0px 0 200px;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #FFF;
+  border: 1px solid transparent;
+  margin-top: -8px;
+  border-image: linear-gradient(#FFF, #FFF) 0 fill / 8 20 8 0 / 0px 0px 0 200px;
 }
 
 input[type="range"].vol-progress {
@@ -275,7 +292,7 @@ input[type="range"].vol-progress {
   height: 40px;
   padding: 4px;
   border-radius: 20px;
-  background-color: rgba(51, 51, 51, 0.3);
+  background: linear-gradient(to right bottom, rgba(255, 255, 255, .3), rgba(255, 255, 255, .7));
   cursor: pointer;
   overflow: hidden;
 }
@@ -294,7 +311,8 @@ input[type="range"].vol-progress {
 .current-bar {
   height: 100%;
   border-radius: 32px;
-  background-color: rgb(51, 51, 51);
+  background-color: rgba(255, 255, 255, .3);
+  backdrop-filter: blur(16px);
   transition: width .1s linear;
 }
 
@@ -303,7 +321,7 @@ input[type="range"].vol-progress {
   left: 1em;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255,255,255,.8)
+  color: rgba(0, 0, 0, 0.8)
 }
 
 .list {
@@ -338,7 +356,7 @@ li.song {
   border-radius: 16px;
   width: 100%;
   height: 90px;
-  background: linear-gradient(to bottom right,rgba(255,255,255,.3), rgba(255,255,255,.7));
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, .3), rgba(255, 255, 255, .7));
   padding: 8px 16px;
   margin-bottom: 16px;
   cursor: pointer;
@@ -409,6 +427,7 @@ li.song .song-cover:hover {
   to {
     transform: rotate(1turn);
   }
+
   /* 0% {
     transform: rotate(0deg);
   }
@@ -469,9 +488,11 @@ li.song.current .song-btn .music-icon.hide {
     border-radius: 0;
     border: 0;
   }
+
   .player {
     width: 100%;
   }
+
   .list {
     width: 100%;
     margin: 0;
@@ -484,6 +505,7 @@ li.song.current .song-btn .music-icon.hide {
     width: 30vw;
     height: 30vw;
   }
+
   .title {
     width: 6em;
     overflow: hidden;
@@ -496,13 +518,18 @@ li.song.current .song-btn .music-icon.hide {
   #app {
     padding: 0;
   }
-  .info, .controls, .list {
+
+  .info,
+  .controls,
+  .list {
     margin: 0;
     border-radius: 0;
   }
+
   .btns {
     width: 100%;
   }
+
   .btns>div {
     flex-shrink: 0;
     padding: 8px;

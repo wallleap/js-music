@@ -411,6 +411,7 @@ const $$song = $$('.song'),
 // #region 封装后面常用的函数
 const playMusic = (audioObject, idx) => {
   audioObject.play()
+  $('body').style.backgroundImage = `url(${playList[idx].cover})`
   $$song[idx].classList.add('current')
   $pauseIcon.classList.remove('hide')
   $playIcon.classList.add('hide')
