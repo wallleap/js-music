@@ -50,6 +50,17 @@ body {
   border-radius: 120px;
   overflow: hidden;
   z-index: 2;
+  animation: rotateTurn 10s linear infinite;
+  animation-play-state: paused;
+}
+
+@keyframes rotateTurn {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .transition {
@@ -58,6 +69,10 @@ body {
 
 .pause-animation {
   animation-play-state: paused;
+}
+
+.play-animation {
+  animation-play-state: running;
 }
 
 .title {

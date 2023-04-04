@@ -227,7 +227,6 @@ const $title = $('.title'),
 const audioObj = new Audio()
 let playTimer = null
 let index = parseInt(getStorage('index', 0), 10)
-let angle = 0
 let isPlaying = getStorage('isPlaying', 'no')
 let orderFlag = parseInt(getStorage('orderFlag', 0), 10)
 let volFlag = parseInt(getStorage('volFlag', 3))
@@ -261,7 +260,6 @@ const setVolume = () => {
   setStorage('volFlag', volFlag)
 }
 const setSong = (cIndex) => {
-  angle = 0
   $title.innerText = playList[cIndex].title
   $artist.innerText = playList[cIndex].artist
   audioObj.src = playList[cIndex].link
@@ -413,7 +411,6 @@ const $$song = $$('.song'),
 const playMusic = (audioObject, idx) => {
   audioObject.play()
   $$song[idx].classList.add('current')
-  $cover.classList.add('transition')
   $pauseIcon.classList.remove('hide')
   $playIcon.classList.add('hide')
 }
@@ -429,20 +426,17 @@ const pauseMusic = (audioObject, idx) => {
 audioObj.addEventListener('playing', function () {
   clearInterval(playTimer)
   let lrcs = getLyric(parseInt(getStorage('index'), 10))
-  $cover.classList.add('transition')
   $total.innerText = formatSec(audioObj.duration)
   playTimer = setInterval(function () {
-    updateLyric()
     setStorage('currentTime', audioObj.currentTime)
     $current.innerText = formatSec(audioObj.currentTime)
     $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
-    // angle += 180
-    // $cover.style.transform = `rotate(${angle}deg)`
+    $cover.classList.add('play-animation')
   }, 1000)
 })
 audioObj.addEventListener('pause', function () {
   clearInterval(playTimer)
-  $cover.style.transform = `rotate(${angle}deg)`
+  $cover.classList.remove('play-animation')
   $$song.forEach((cSong) => {
     cSong.classList.remove('current')
   })
@@ -456,7 +450,6 @@ audioObj.addEventListener('ended', function () {
   })
   $pauseIcon.classList.add('hide')
   $playIcon.classList.remove('hide')
-  angle = 0
   audioObj.pause()
   $$song[index].classList.remove('current')
   switch (parseInt(getStorage('orderFlag'), 10)) {
@@ -509,6 +502,9 @@ audioObj.addEventListener('ended', function () {
       break
   }
 })
+audioObj.addEventListener('timeupdate', function () {
+  updateLyric()
+})
 audioObj.onvolumechange = function () {
   $volBar.value = audioObj.volume
   setVolume()
@@ -529,7 +525,6 @@ $playBtn.onclick = function () {
 }
 $preBtn.onclick = function () {
   clearInterval(playTimer)
-  angle = 0
   $$song.forEach((cSong) => {
     cSong.classList.remove('current')
   })
@@ -557,7 +552,6 @@ $preBtn.onclick = function () {
 }
 $nextBtn.onclick = function () {
   clearInterval(playTimer)
-  angle = 0
   audioObj.pause()
   $$song.forEach((cSong) => {
     cSong.classList.remove('current')
@@ -604,7 +598,6 @@ $$song.forEach((song, currentIndex) => {
       }
       setStorage('isPlaying', isPlaying)
     } else {
-      angle = 0
       setStorage('currentTime', 0)
       playMusic(audioObj, currentIndex)
     }
