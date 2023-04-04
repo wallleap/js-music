@@ -389,6 +389,7 @@ const initPlayer = (cIndex) => {
   audioObj.volume = volValue
   setVolume()
   setSong(cIndex)
+  $('body').style.backgroundImage = `url(${playList[cIndex].cover})`
 }
 // #endregion
 
