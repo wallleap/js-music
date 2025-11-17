@@ -112,21 +112,16 @@ const formatTime = (time) => {
 const getRand = (start, end) => {
   return Math.floor(Math.random() * (end - start)) + start
 }
-const getStorage = (key, value) => {
-  let result = value
-  localStorage.getItem(key) ? (result = localStorage.getItem(key)) : localStorage.setItem(key, value)
-  // TODO: 删除
-  /* if (key !== 'currentTime') {
-    console.log('get', key, result)
-  } */
-  return result
-}
 const setStorage = (key, value) => {
-  // TODO: 删除
-  /* if (key !== 'currentTime') {
-    console.log('set', key, value)
-  } */
   localStorage.setItem(key, value)
+}
+const getStorage = (key, value) => {
+  const storedValue = localStorage.getItem(key)
+  if (storedValue !== null) {
+    return storedValue
+  }
+  setStorage(key, value)
+  return value
 }
 const setTips = (text, type) => {
   let $tipWrap = document.createElement('div')
