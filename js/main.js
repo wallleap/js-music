@@ -515,7 +515,7 @@ audioObj.onvolumechange = function () {
 
 // #region 用户触发事件
 $playBtn.onclick = function () {
-  audioObj.currentTime = getStorage('currentTime')
+  audioObj.currentTime = getStorage('currentTime') || 0
   if (getStorage('isPlaying') === 'yes') {
     pauseMusic(audioObj, parseInt(getStorage('index'), 10))
     isPlaying = 'no'
