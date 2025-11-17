@@ -302,7 +302,7 @@ const setLyricInner = cIndex => {
 }
 const initLyric = () => {
   let lrcs = getLyric(parseInt(getStorage('index'), 10))
-  let cTime = getStorage('currentTime')
+  let cTime = getStorage('currentTime', 0)
   $$('.lyric-inner p').forEach(($lrc) => {
     if ($lrc.classList.contains('on')) {
       $lrc.classList.remove('on')
@@ -515,7 +515,7 @@ audioObj.onvolumechange = function () {
 
 // #region 用户触发事件
 $playBtn.onclick = function () {
-  audioObj.currentTime = getStorage('currentTime') || 0
+  audioObj.currentTime = getStorage('currentTime')
   if (getStorage('isPlaying') === 'yes') {
     pauseMusic(audioObj, parseInt(getStorage('index'), 10))
     isPlaying = 'no'
