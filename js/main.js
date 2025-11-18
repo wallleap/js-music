@@ -584,6 +584,7 @@ window.addEventListener('load', () => {
       }
       index = currentIndex
       setLyricInner(index)
+      setSong()
       updateLyric()
       setStorage('index', index)
     }
