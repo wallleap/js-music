@@ -1,3 +1,7 @@
+* {
+  user-select: none;
+}
+
 body {
   display: flex;
   align-items: center;
@@ -311,7 +315,7 @@ input[type="range"].vol-progress {
 .current-bar {
   height: 100%;
   border-radius: 32px;
-  background-color: rgba(255, 255, 255, .3);
+  background-color: rgba(255, 255, 255, .8);
   backdrop-filter: blur(16px);
   transition: width .1s linear;
 }

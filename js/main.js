@@ -1,5 +1,6 @@
-const playList = [
-  {
+import AudioPlayer from './audioPlayer.js'
+
+const playList = [{
     title: 'Valder Fields',
     artist: 'Tamas Wells',
     link: '//cdn.wallleap.cn/musics/1.mp3',
@@ -99,7 +100,6 @@ const playList = [
   },
 ]
 
-
 // #region 工具函数，放在前面
 const formatSec = (secTime) => {
   return `${parseInt(parseInt(secTime) / 60)}:${parseInt(secTime) % 60 >= 10 ? parseInt(secTime) % 60 : '0' + parseInt(secTime) % 60}`
@@ -182,173 +182,196 @@ const setTips = (text, type) => {
 const decodeBase64 = (str) => {
   return decodeURIComponent(escape(window.atob(str)));
 }
-// #endregion
-
-// #region 已加载的 DOM 元素获取
 const $ = el => document.querySelector(el)
 const $$ = els => document.querySelectorAll(els)
-const $title = $('.title'),
-  $artist = $('.artist'),
-  $cover = $('.cover'),
-  $playBtn = $('.play-btn'),
-  $playIcon = $('.icon-play'),
-  $pauseIcon = $('.icon-pause'),
-  $preBtn = $('.pre-btn'),
-  $nextBtn = $('.next-btn'),
-  $controls = $('.controls'),
-  $progress = $('.progress'),
-  $currentBar = $('.current-bar'),
-  $current = $('.time>.current'),
-  $total = $('.time>.total'),
-  $songs = $('.songs'),
-  $lyricBox = $('.lyric-box'),
-  $orderBtn = $('.order-btn'),
-  $$orderIcons = $orderBtn.querySelectorAll('.music-icon'),
-  $orderIcon = $('.icon-order'),
-  $loopIcon = $('.icon-loop'),
-  $repeatIcon = $('.icon-repeat'),
-  $randIcon = $('.icon-rand'),
-  $volBtn = $('.vol-btn'),
-  $$volIcons = $$('.vol-btn>.music-icon'),
-  $loudIcon = $('.icon-loud'),
-  $volumeIcon = $('.icon-volume'),
-  $quietIcon = $('.icon-quiet'),
-  $muteIcon = $('.icon-mute'),
-  $menuIcon = $('.icon-menu'),
-  $volBar = $('.vol-progress')
 // #endregion
 
-// #region 播放前的一些变量和函数
-const audioObj = new Audio()
-let playTimer = null
-let index = parseInt(getStorage('index', 0), 10)
-let isPlaying = getStorage('isPlaying', 'no')
-let orderFlag = parseInt(getStorage('orderFlag', 0), 10)
-let volFlag = parseInt(getStorage('volFlag', 3))
-let isMuted = getStorage('isMuted', 'no')
-let volValue = getStorage('volValue', 1)
-let orderList = ['顺序播放', '列表循环', '单曲循环', '随机播放']
-let isDraging = false
-let dragTimer = null
-
-const setVolume = () => {
-  audioObj.volume = getStorage('volValue')
-  isMuted = 'no'
-  $$volIcons.forEach((vol, i) => {
-    vol.classList.remove('show')
+// 整体加载完成
+window.addEventListener('load', () => {
+  const audioPlayer = new AudioPlayer({
+    tracks: playList.map(music => (music.link)),
+    volume: parseFloat(getStorage('volValue', 1)),
+    currentIndex: parseInt(getStorage('index', 0), 10),
   })
-  if (audioObj.volume >= 0.8) { // loud
-    volFlag = 3
-    $loudIcon.classList.add('show')
-  } else if (audioObj.volume >= 0.5) { // volume
-    volFlag = 2
-    $volumeIcon.classList.add('show')
-  } else if (audioObj.volume > 0) { // quiet
-    volFlag = 1
-    $quietIcon.classList.add('show')
-  } else {
-    volFlag = 0
-    isMuted = 'yes'
-    $muteIcon.classList.add('show')
+
+  // #region 已加载的 DOM 元素获取
+  const $title = $('.title'),
+    $artist = $('.artist'),
+    $cover = $('.cover'),
+    $playBtn = $('.play-btn'),
+    $playIcon = $('.icon-play'),
+    $pauseIcon = $('.icon-pause'),
+    $preBtn = $('.pre-btn'),
+    $nextBtn = $('.next-btn'),
+    $controls = $('.controls'),
+    $progress = $('.progress'),
+    $currentBar = $('.current-bar'),
+    $current = $('.time>.current'),
+    $total = $('.time>.total'),
+    $songs = $('.songs'),
+    $lyricBox = $('.lyric-box'),
+    $orderBtn = $('.order-btn'),
+    $$orderIcons = $orderBtn.querySelectorAll('.music-icon'),
+    $orderIcon = $('.icon-order'),
+    $loopIcon = $('.icon-loop'),
+    $repeatIcon = $('.icon-repeat'),
+    $randIcon = $('.icon-rand'),
+    $volBtn = $('.vol-btn'),
+    $$volIcons = $$('.vol-btn>.music-icon'),
+    $loudIcon = $('.icon-loud'),
+    $volumeIcon = $('.icon-volume'),
+    $quietIcon = $('.icon-quiet'),
+    $muteIcon = $('.icon-mute'),
+    $menuIcon = $('.icon-menu'),
+    $volBar = $('.vol-progress')
+  // #endregion
+
+  // #region 播放前的一些变量和函数
+  let playTimer = null
+  let index = parseInt(getStorage('index', 0), 10)
+  let orderFlag = parseInt(getStorage('orderFlag', 0), 10)
+  let volFlag = parseInt(getStorage('volFlag', 3))
+  let isMuted = getStorage('isMuted', 'no')
+  let volValue = getStorage('volValue', 1)
+  let orderList = ['顺序播放', '列表循环', '单曲循环', '随机播放']
+  let isDraging = false
+  let dragTimer = null
+
+  const toggleVolIcon = (volValue) => {
+    $$volIcons.forEach((vol) => {
+      vol.classList.remove('show')
+    })
+    if (volValue >= 0.8) { // loud
+      volFlag = 3
+      $loudIcon.classList.add('show')
+    } else if (volValue >= 0.5) { // volume
+      volFlag = 2
+      $volumeIcon.classList.add('show')
+    } else if (volValue > 0) { // quiet
+      volFlag = 1
+      $quietIcon.classList.add('show')
+    } else {
+      volFlag = 0 // mute
+      $muteIcon.classList.add('show')
+    }
+    setStorage('volFlag', volFlag)
   }
-  setStorage('isMuted', isMuted)
-  setStorage('volFlag', volFlag)
-}
-const setSong = (cIndex) => {
-  $title.innerText = playList[cIndex].title
-  $artist.innerText = playList[cIndex].artist
-  audioObj.src = playList[cIndex].link
-  $cover.style.backgroundImage = `url(${playList[cIndex].cover})`
-}
-const getLyric = cIndex => {
-  let lrcs = []
-  if (!playList[cIndex].lyric) {
-    lrcs.push(JSON.parse(`{"time": "${formatTime('00:00.00')}", "text": "此歌曲暂时没有适配歌词"}`))
-  } else {
-    let lrcArr = decodeBase64(playList[cIndex].lyric).split('\n')
-    lrcArr.forEach((item) => {
-      let temp = item.split('\]')
-      if (temp[1]) {
-        lrcs.push(JSON.parse(`{"time": "${formatTime(temp[0].slice(1))}", "text": "${temp[1]}"}`))
+  const toggleMuted = () => {
+    audioPlayer.setMuted(!audioPlayer.getState().muted)
+    isMuted = audioPlayer.getState().muted ? 'yes' : 'no'
+    setStorage('isMuted', isMuted)
+    if (isMuted === 'yes') {
+      toggleVolIcon(0)
+    } else {
+      audioPlayer.setVolume(getStorage('volValue', 1))
+      const volValue = audioPlayer.getState().volume
+      if (volValue === 0) {
+        audioPlayer.setVolume(0.5)
+        setStorage('volValue', 0.5)
+      }
+      toggleVolIcon(volValue)
+    }
+  }
+  const setVolume = () => {
+    audioPlayer.setVolume(getStorage('volValue', 1))
+    setStorage('isMuted', 'no')
+    toggleVolIcon(audioPlayer.getState().volume)
+  }
+  const setSong = () => {
+    $title.innerText = playList[audioPlayer.currentIndex].title
+    $artist.innerText = playList[audioPlayer.currentIndex].artist
+    $cover.style.backgroundImage = `url(${playList[audioPlayer.currentIndex].cover})`
+  }
+  const getLyric = () => {
+    let lrcs = []
+    const lyric = playList[audioPlayer.currentIndex].lyric
+    if (!lyric) {
+      lrcs.push(JSON.parse(`{"time": "${formatTime('00:00.00')}", "text": "此歌曲暂时没有适配歌词"}`))
+    } else {
+      let lrcArr = decodeBase64(lyric).split('\n')
+      lrcArr.forEach((item) => {
+        let temp = item.split('\]')
+        if (temp[1]) {
+          lrcs.push(JSON.parse(`{"time": "${formatTime(temp[0].slice(1))}", "text": "${temp[1]}"}`))
+        }
+      })
+    }
+    return lrcs
+  }
+  const setLyricInner = cIndex => {
+    if ($('.lyric-inner')) {
+      $('.lyric-inner').remove()
+    }
+    let lyricArr = getLyric(cIndex)
+    let $lrcFragment = document.createDocumentFragment()
+    let $lyricInner = document.createElement('div')
+    $lyricInner.classList.add('lyric-inner')
+    $lyricInner.style.transform = "translateY(80px)"
+    lyricArr.forEach((lrc) => {
+      let $lrc = document.createElement('p')
+      let $text = document.createElement('span')
+      $text.textContent = lrc.text
+      $lrc.classList.add('on')
+      $lrc.append($text)
+      $lrcFragment.append($lrc)
+    })
+    $lyricInner.append($lrcFragment)
+    $lyricBox.append($lyricInner)
+  }
+  const initLyric = () => {
+    let lrcs = getLyric(parseInt(getStorage('index'), 10))
+    let cTime = getStorage('currentTime', 0)
+    $$('.lyric-inner p').forEach(($lrc) => {
+      if ($lrc.classList.contains('on')) {
+        $lrc.classList.remove('on')
+      }
+    })
+    lrcs.forEach((lrc, idx) => {
+      if (cTime === 0) {
+        $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+      }
+      if (idx < (lrcs.length - 1)) {
+        if (lrc.time <= cTime && cTime <= lrcs[idx + 1].time) {
+          $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
+          $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
+        }
+      }
+      if (cTime >= (lrcs[lrcs.length - 1].time)) {
+        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
+        $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
       }
     })
   }
-  return lrcs
-}
-const setLyricInner = cIndex => {
-  if ($('.lyric-inner')) {
-    $('.lyric-inner').remove()
+  const updateLyric = () => {
+    let lrcs = getLyric(parseInt(getStorage('index'), 10))
+    $$('.lyric-inner p').forEach(($lrc) => {
+      if ($lrc.classList.contains('on')) {
+        $lrc.classList.remove('on')
+      }
+    })
+    lrcs.forEach((lrc, idx) => {
+      if (audioPlayer.getState().currentTime === 0) {
+        $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+      }
+      if (idx < (lrcs.length - 1)) {
+        if (lrc.time <= audioPlayer.getState().currentTime && audioPlayer.getState().currentTime <= lrcs[idx + 1].time) {
+          $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
+          $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
+        }
+      }
+      if (audioPlayer.getState().currentTime >= (lrcs[lrcs.length - 1].time)) {
+        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
+        $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
+      }
+    })
   }
-  let lyricArr = getLyric(cIndex)
-  let $lrcFragment = document.createDocumentFragment()
-  let $lyricInner = document.createElement('div')
-  $lyricInner.classList.add('lyric-inner')
-  $lyricInner.style.transform = "translateY(80px)"
-  lyricArr.forEach((lrc, idx) => {
-    let $lrc = document.createElement('p')
-    let $text = document.createElement('span')
-    $text.textContent = lrc.text
-    $lrc.classList.add('on')
-    $lrc.append($text)
-    $lrcFragment.append($lrc)
-  })
-  $lyricInner.append($lrcFragment)
-  $lyricBox.append($lyricInner)
-}
-const initLyric = () => {
-  let lrcs = getLyric(parseInt(getStorage('index'), 10))
-  let cTime = getStorage('currentTime', 0)
-  $$('.lyric-inner p').forEach(($lrc) => {
-    if ($lrc.classList.contains('on')) {
-      $lrc.classList.remove('on')
-    }
-  })
-  lrcs.forEach((lrc, idx) => {
-    if (cTime === 0) {
-      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
-    }
-    if (idx < (lrcs.length - 1)) {
-      if (lrc.time <= cTime && cTime <= lrcs[idx + 1].time) {
-        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
-        $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
-      }
-    }
-    if (cTime >= (lrcs[lrcs.length - 1].time)) {
-      $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
-      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
-    }
-  })
-}
-const updateLyric = () => {
-  let lrcs = getLyric(parseInt(getStorage('index'), 10))
-  $$('.lyric-inner p').forEach(($lrc) => {
-    if ($lrc.classList.contains('on')) {
-      $lrc.classList.remove('on')
-    }
-  })
-  lrcs.forEach((lrc, idx) => {
-    if (audioObj.currentTime === 0) {
-      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
-    }
-    if (idx < (lrcs.length - 1)) {
-      if (lrc.time <= audioObj.currentTime && audioObj.currentTime <= lrcs[idx + 1].time) {
-        $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
-        $$('.lyric-inner p')[idx], $$('.lyric-inner p')[idx].classList.add('on')
-      }
-    }
-    if (audioObj.currentTime >= (lrcs[lrcs.length - 1].time)) {
-      $('.lyric-inner').style.transform = `translateY(${80 - 35 * idx}px)`
-      $$('.lyric-inner p')[lrcs.length - 1].classList.add('on')
-    }
-  })
-}
-const initPlayer = (cIndex) => {
-  clearInterval(playTimer)
-  let $fragment = document.createDocumentFragment()
-  playList.forEach(song => {
-    let $songItem = document.createElement('li')
-    $songItem.classList.add('song')
-    $songItem.innerHTML = `
+  const initPlayer = (cIndex) => {
+    clearInterval(playTimer)
+    let $fragment = document.createDocumentFragment()
+    playList.forEach(song => {
+      let $songItem = document.createElement('li')
+      $songItem.classList.add('song')
+      $songItem.innerHTML = `
       <div class="song-info">
         <div class="song-cover">
           <img src="${song.cover}" alt="cover">
@@ -367,271 +390,221 @@ const initPlayer = (cIndex) => {
         </svg>
       </div>
     `
-    $fragment.appendChild($songItem)
-  })
-  $songs.append($fragment)
-  setLyricInner(cIndex)
-  initLyric()
-  $$orderIcons.forEach((icon) => {
-    icon.classList.remove('show')
-  })
-  $$orderIcons[orderFlag].classList.add('show')
-  if (!$playIcon.classList.contains('hide')) {
-    isPlaying = 'no'
-    setStorage('isPlaying', isPlaying)
-  }
-  $volBar.value = volValue
-  audioObj.volume = volValue
-  setVolume()
-  setSong(cIndex)
-  $('body').style.backgroundImage = `url(${playList[cIndex].cover})`
-}
-// #endregion
-
-// #region 初始化
-initPlayer(index)
-audioObj.addEventListener('canplay', function () {
-  $current.innerText = formatSec(getStorage('currentTime', 0))
-  $total.innerText = formatSec(audioObj.duration)
-  $currentBar.style.width = `${getStorage('currentTime') / audioObj.duration * 100}%`
-})
-// #endregion
-
-// #region 初始化后才有的 DOM 元素
-const $$song = $$('.song'),
-  $songBtn = $(`.song-btn`),
-  $$lrcs = $$('.lyric-inner>p')
-// #endregion
-
-// #region 封装后面常用的函数
-const playMusic = (audioObject, idx) => {
-  audioObject.play()
-  $('body').style.backgroundImage = `url(${playList[idx].cover})`
-  $$song[idx].classList.add('current')
-  $pauseIcon.classList.remove('hide')
-  $playIcon.classList.add('hide')
-}
-const pauseMusic = (audioObject, idx) => {
-  audioObject.pause()
-  $$song[idx].classList.remove('current')
-  $pauseIcon.classList.add('hide')
-  $playIcon.classList.remove('hide')
-}
-// #endregion
-
-// #region 系统事件
-audioObj.addEventListener('playing', function () {
-  clearInterval(playTimer)
-  let lrcs = getLyric(parseInt(getStorage('index'), 10))
-  $total.innerText = formatSec(audioObj.duration)
-  playTimer = setInterval(function () {
-    setStorage('currentTime', audioObj.currentTime)
-    $current.innerText = formatSec(audioObj.currentTime)
-    $currentBar.style.width = `${audioObj.currentTime / audioObj.duration * 100}%`
-    $cover.classList.add('play-animation')
-  }, 1000)
-})
-audioObj.addEventListener('pause', function () {
-  clearInterval(playTimer)
-  $cover.classList.remove('play-animation')
-  $$song.forEach((cSong) => {
-    cSong.classList.remove('current')
-  })
-  $pauseIcon.classList.add('hide')
-  $playIcon.classList.remove('hide')
-})
-audioObj.addEventListener('ended', function () {
-  clearInterval(playTimer)
-  $$song.forEach((cSong) => {
-    cSong.classList.remove('current')
-  })
-  $pauseIcon.classList.add('hide')
-  $playIcon.classList.remove('hide')
-  audioObj.pause()
-  $$song[index].classList.remove('current')
-  switch (parseInt(getStorage('orderFlag'), 10)) {
-    case 0:
-      if (index === playList.length - 1) {
-        $current.innerText = formatSec(audioObj.duration)
-        audioObj.pause()
-      } else {
-        index = index >= playList.length - 1 ? index = 0 : ++index
-        setStorage('index', index)
-        setSong(index)
-        setLyricInner(index)
-        updateLyric()
-        audioObj.play()
-        $playIcon.classList.add('hide')
-        $pauseIcon.classList.remove('hide')
-        $$song[index].classList.add('current')
-      }
-      break
-    case 1:
-      index = index >= playList.length - 1 ? index = 0 : ++index
-      setStorage('index', index)
-      setSong(index)
-      setLyricInner(index)
-      updateLyric()
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-    case 2:
-      setSong(index)
-      setLyricInner(index)
-      updateLyric()
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-    case 3:
-      index = getRand(0, playList.length)
-      setStorage('index', index)
-      setSong(index)
-      setLyricInner(index)
-      updateLyric()
-      audioObj.play()
-      $playIcon.classList.add('hide')
-      $pauseIcon.classList.remove('hide')
-      $$song[index].classList.add('current')
-      break
-  }
-})
-audioObj.addEventListener('timeupdate', function () {
-  updateLyric()
-})
-audioObj.onvolumechange = function () {
-  $volBar.value = audioObj.volume
-  setVolume()
-}
-// #endregion
-
-// #region 用户触发事件
-$playBtn.onclick = function () {
-  audioObj.currentTime = getStorage('currentTime')
-  if (getStorage('isPlaying') === 'yes') {
-    pauseMusic(audioObj, parseInt(getStorage('index'), 10))
-    isPlaying = 'no'
-  } else {
-    playMusic(audioObj, parseInt(getStorage('index'), 10))
-    isPlaying = 'yes'
-  }
-  setStorage('isPlaying', isPlaying)
-}
-$preBtn.onclick = function () {
-  clearInterval(playTimer)
-  $$song.forEach((cSong) => {
-    cSong.classList.remove('current')
-  })
-  setStorage('currentTime', 0)
-  switch (parseInt(getStorage('orderFlag'), 10)) {
-    case 0:
-    case 1:
-    case 2:
-      index = index === 0 ? index = playList.length - 1 : --index
-      setStorage('index', index)
-      break
-    case 3:
-      let randNum = getRand(0, playList.length)
-      index = (randNum === index ? (index === 0 ? index = playList.length - 1 : --index) : randNum)
-      setStorage('index', index)
-      break
-  }
-  isPlaying = 'yes'
-  setSong(index)
-  setLyricInner(index)
-  updateLyric()
-  setStorage('isPlaying', isPlaying)
-  setStorage('index', index)
-  playMusic(audioObj, index)
-}
-$nextBtn.onclick = function () {
-  clearInterval(playTimer)
-  audioObj.pause()
-  $$song.forEach((cSong) => {
-    cSong.classList.remove('current')
-  })
-  setStorage('currentTime', 0)
-  switch (parseInt(getStorage('orderFlag'), 10)) {
-    case 0:
-    case 1:
-    case 2:
-      index = index >= playList.length - 1 ? index = 0 : ++index
-      setStorage('index', index)
-      break
-    case 3:
-      let randNum = getRand(0, playList.length)
-      index = (randNum === index ? (index >= playList.length - 1 ? index = 0 : ++index) : randNum)
-      setStorage('index', index)
-      break
-  }
-  isPlaying = 'yes'
-  setSong(index)
-  setLyricInner(index)
-  updateLyric()
-  setStorage('index', index)
-  setStorage('isPlaying', isPlaying)
-  playMusic(audioObj, index)
-}
-$$song.forEach((song, currentIndex) => {
-  song.onclick = function () {
-    clearInterval(playTimer)
-    index = parseInt(getStorage('index'), 10)
-    $$song.forEach((cSong, idx) => {
-      cSong.classList.remove('current')
-      pauseMusic(audioObj, idx)
+      $fragment.appendChild($songItem)
     })
-    setSong(currentIndex)
-    if (currentIndex === index) {
-      audioObj.currentTime = getStorage('currentTime')
-      if (getStorage('isPlaying') === 'yes') {
-        pauseMusic(audioObj, index)
-        isPlaying = 'no'
-      } else {
-        playMusic(audioObj, index)
-        isPlaying = 'yes'
-      }
-      setStorage('isPlaying', isPlaying)
-    } else {
-      setStorage('currentTime', 0)
-      playMusic(audioObj, currentIndex)
+    $songs.append($fragment)
+    setLyricInner(cIndex)
+    initLyric()
+    $$orderIcons.forEach((icon) => {
+      icon.classList.remove('show')
+    })
+    $$orderIcons[orderFlag].classList.add('show')
+    if (!$playIcon.classList.contains('hide')) {
+      setStorage('isPlaying', 'no')
     }
-    index = currentIndex
-    setLyricInner(index)
+    $volBar.value = volValue
+    setVolume()
+    setSong()
+    $('body').style.backgroundImage = `url(${playList[audioPlayer.currentIndex].cover})`
+  }
+  // #endregion
+
+  // #region 初始化
+  initPlayer(index)
+  audioPlayer.on('canplay', () => {
+    $current.innerText = formatSec(getStorage('currentTime', 0))
+    $total.innerText = formatSec(audioPlayer.getState().duration)
+    $currentBar.style.width = `${getStorage('currentTime') / audioPlayer.getState().duration * 100}%`
+  })
+  // #endregion
+
+  // #region 初始化后才有的 DOM 元素
+  const $$song = $$('.song'),
+    $songBtn = $(`.song-btn`),
+    $$lrcs = $$('.lyric-inner>p')
+  // #endregion
+
+  // #region 封装后面常用的函数
+  const playMusic = () => {
+    const idx = audioPlayer.currentIndex
+    audioPlayer.play()
+    $('body').style.backgroundImage = `url(${playList[audioPlayer.currentIndex].cover})`
+    $$song[idx].classList.add('current')
+    $pauseIcon.classList.remove('hide')
+    $playIcon.classList.add('hide')
+  }
+  const pauseMusic = () => {
+    audioPlayer.pause()
+    $$song[audioPlayer.currentIndex].classList.remove('current')
+    $pauseIcon.classList.add('hide')
+    $playIcon.classList.remove('hide')
+  }
+  // #endregion
+
+  // #region 系统事件
+  audioPlayer.on('playing', function () {
+    clearInterval(playTimer)
+    $total.innerText = formatSec(audioPlayer.getState().duration)
+    playTimer = setInterval(function () {
+      setStorage('currentTime', audioPlayer.getState().currentTime)
+      $current.innerText = formatSec(audioPlayer.getState().currentTime)
+      $currentBar.style.width = `${getStorage('currentTime') / audioPlayer.getState().duration * 100}%`
+      $cover.classList.add('play-animation')
+    }, 1000)
+  })
+  audioPlayer.on('pause', function () {
+    clearInterval(playTimer)
+    $cover.classList.remove('play-animation')
+    $$song.forEach((cSong) => {
+      cSong.classList.remove('current')
+    })
+    $pauseIcon.classList.add('hide')
+    $playIcon.classList.remove('hide')
+  })
+  audioPlayer.on('ended', function () {
+    clearInterval(playTimer)
+    $$song.forEach((cSong) => {
+      cSong.classList.remove('current')
+    })
+    $pauseIcon.classList.add('hide')
+    $playIcon.classList.remove('hide')
+    audioPlayer.pause()
+    switch (parseInt(getStorage('orderFlag'), 10)) {
+      case 0:
+        // 顺序播放，如果当前是最后一首，则停止播放，否则播放下一首
+        if (audioPlayer.currentIndex === playList.length - 1) {
+          $current.innerText = formatSec(audioPlayer.getState().duration)
+          audioPlayer.pause()
+        } else {
+          audioPlayer.next()
+        }
+        break
+      case 1:
+        // 列表循环，播放下一首，最后一首则从头开始
+        audioPlayer.next()
+        break
+      case 2:
+        // 单曲循环，重新播放当前歌曲
+        audioPlayer.setProgress(0)
+        audioPlayer.play()
+        break
+      case 3:
+        // 随机播放，随机选择一首歌曲播放
+        audioPlayer.rand()
+        break
+    }
+    if (audioPlayer.getState().isPlaying) {
+      $$song[audioPlayer.currentIndex].classList.add('current')
+      $playIcon.classList.add('hide')
+      $pauseIcon.classList.remove('hide')
+      setSong()
+      setStorage('index', audioPlayer.currentIndex)
+      setLyricInner(audioPlayer.currentIndex)
+      initLyric()
+    }
+  })
+  audioPlayer.on('timeupdate', function () {
     updateLyric()
-    setStorage('index', index)
+  })
+  audioPlayer.on('volumechange', function () {
+    $volBar.value = audioPlayer.getState().volume
+    setStorage('volValue', audioPlayer.getState().volume)
+    if (!audioPlayer.getState().muted) {
+      toggleVolIcon(audioPlayer.getState().volume)
+    }
+    if (audioPlayer.getState().volume === 0) {
+      audioPlayer.setMuted(true)
+      isMuted = 'yes'
+      setStorage('isMuted', isMuted)
+    }
+  })
+  // #endregion
+
+  // #region 用户触发事件
+  $playBtn.onclick = function () {
+    audioPlayer.setProgress(getStorage('currentTime'))
+    if (audioPlayer.getState().isPlaying) {
+      pauseMusic()
+    } else {
+      playMusic()
+    }
   }
-})
-$progress.addEventListener('click', function (event) {
-  let per = event.offsetX / this.clientWidth
-  $currentBar.style.width = per * 100 + "%"
-  audioObj.currentTime = audioObj.duration * per
-  setStorage('currentTime', audioObj.currentTime)
-  $current.innerText = formatSec(audioObj.currentTime)
-  $total.innerText = formatSec(audioObj.duration)
-})
-const pressDown = (event) => {
-  isDraging = true
-  let clientX = 0
-  let rect = $progress.getBoundingClientRect()
-  let offsetX = 0
-  let per = 0
-  if (event.touches) {
-    clientX = event.touches[0].clientX
-  } else {
-    clientX = event.clientX
+  // 切换音乐
+  const changeMusic = (callback) => {
+    clearInterval(playTimer)
+    $$song.forEach((cSong) => {
+      cSong.classList.remove('current')
+    })
+    setStorage('currentTime', 0)
+    switch (parseInt(getStorage('orderFlag'), 10)) {
+      case 0:
+      case 1:
+      case 2:
+        callback()
+        break
+      case 3:
+        audioPlayer.rand()
+        break
+    }
+    const cIndex = audioPlayer.currentIndex
+    setLyricInner(cIndex)
+    setSong()
+    setStorage('index', cIndex)
+    updateLyric()
+    playMusic()
   }
-  offsetX = clientX - rect.x
-  per = offsetX / $progress.clientWidth
-  $currentBar.style.width = per * 100 + "%"
-}
-const pressUp = (event) => {
-  isDraging = false
-}
-const onDraging = (event) => {
-  if (isDraging) {
+  $preBtn.onclick = function () {
+    changeMusic(() => {
+      audioPlayer.prev()
+    })
+  }
+  $nextBtn.onclick = function () {
+    changeMusic(() => {
+      audioPlayer.next()
+    })
+  }
+  $$song.forEach((song, currentIndex) => {
+    song.onclick = function () {
+      clearInterval(playTimer)
+      audioPlayer.pause()
+      index = parseInt(getStorage('index'), 10)
+      $$song.forEach((cSong) => {
+        if (cSong && cSong.classList) {
+          cSong.classList.remove('current')
+        }
+      })
+      audioPlayer.currentIndex = currentIndex
+      if (currentIndex === index) {
+        audioPlayer.setProgress(getStorage('currentTime'))
+        if (audioPlayer.getState().isPlaying) {
+          pauseMusic()
+        } else {
+          playMusic()
+        }
+      } else {
+        setStorage('currentTime', 0)
+        playMusic()
+      }
+      index = currentIndex
+      setLyricInner(index)
+      updateLyric()
+      setStorage('index', index)
+    }
+  })
+  $progress.addEventListener('click', function (event) {
+    let per = event.offsetX / this.clientWidth
+    $currentBar.style.width = per * 100 + "%"
+    audioPlayer.seek(per * 100)
+    const {
+      duration,
+      currentTime
+    } = audioPlayer.getState()
+    setStorage('currentTime', currentTime)
+    $current.innerText = formatSec(currentTime)
+    $total.innerText = formatSec(duration)
+  })
+  const pressDown = (event) => {
+    isDraging = true
     let clientX = 0
     let rect = $progress.getBoundingClientRect()
     let offsetX = 0
@@ -644,61 +617,63 @@ const onDraging = (event) => {
     offsetX = clientX - rect.x
     per = offsetX / $progress.clientWidth
     $currentBar.style.width = per * 100 + "%"
-    if (dragTimer) {
-      clearTimeout(dragTimer)
-    }
-    dragTimer = setTimeout(() => {
-      audioObj.currentTime = audioObj.duration * per
-      setStorage('currentTime', audioObj.currentTime)
-      $current.innerText = formatSec(audioObj.currentTime)
-    }, 100)
   }
-}
-$progress.onmousedown = pressDown
-$progress.ontouchstart = pressDown
-$progress.onmouseup = pressUp
-$progress.ontouchend = pressUp
-$progress.onmousemove = onDraging
-$progress.ontouchmove = onDraging
-$orderBtn.addEventListener('click', function () {
-  let cOrderFlag = parseInt(getStorage('orderFlag'), 10)
-  $$orderIcons.forEach((icon) => {
-    icon.classList.remove('show')
-  })
-  cOrderFlag = (cOrderFlag >= ($$orderIcons.length - 1)) ? 0 : (++cOrderFlag)
-  $$orderIcons[cOrderFlag].classList.add('show')
-  setStorage('orderFlag', cOrderFlag)
-  setTips(`已切换到${orderList[cOrderFlag]}`, 'toast')
-})
-$volBtn.addEventListener('click', function (e) {
-  let currentVol = getStorage('volValue')
-  let currentMuted = getStorage('isMuted')
-  if (e.target.classList.contains('music-icon') || e.target.classList.contains('vol-btn')) {
-    $$volIcons.forEach((vol) => {
-      vol.classList.remove('show')
+  const pressUp = () => {
+    isDraging = false
+  }
+  const onDraging = (event) => {
+    if (isDraging) {
+      let clientX = 0
+      let rect = $progress.getBoundingClientRect()
+      let offsetX = 0
+      let per = 0
+      if (event.touches) {
+        clientX = event.touches[0].clientX
+      } else {
+        clientX = event.clientX
+      }
+      offsetX = clientX - rect.x
+      per = offsetX / $progress.clientWidth
+      $currentBar.style.width = per * 100 + "%"
+      if (dragTimer) {
+        clearTimeout(dragTimer)
+      }
+      dragTimer = setTimeout(() => {
+        const {
+          currentTime,
+          duration
+        } = audioPlayer.getState()
+        audioPlayer.setProgress(duration * per)
+        setStorage('currentTime', currentTime)
+        $current.innerText = formatSec(currentTime)
+      }, 100)
+    }
+  }
+  $progress.onmousedown = pressDown
+  $progress.ontouchstart = pressDown
+  $progress.onmouseup = pressUp
+  $progress.ontouchend = pressUp
+  $progress.onmousemove = onDraging
+  $progress.ontouchmove = onDraging
+  $orderBtn.addEventListener('click', function () {
+    let cOrderFlag = parseInt(getStorage('orderFlag'), 10)
+    $$orderIcons.forEach((icon) => {
+      icon.classList.remove('show')
     })
-    console.log(currentMuted, '-----------------------')
-    if (currentMuted === 'no') {
-      isMuted = 'yes'
-      audioObj.muted = true
-      $muteIcon.classList.add('show')
-    } else {
-      isMuted = 'no'
-      audioObj.muted = false
-      $muteIcon.classList.remove('show')
-      audioObj.volume = currentVol
-    }
-    setStorage('isMuted', isMuted)
+    cOrderFlag = (cOrderFlag >= ($$orderIcons.length - 1)) ? 0 : (++cOrderFlag)
+    $$orderIcons[cOrderFlag].classList.add('show')
+    setStorage('orderFlag', cOrderFlag)
+    setTips(`已切换到${orderList[cOrderFlag]}`, 'toast')
+  })
+  $volBtn.addEventListener('click', function (e) {
+    if (e.target.classList.contains('vol-progress')) return
+    toggleMuted()
+  })
+  $volBar.oninput = function () {
+    volValue = this.value
+    audioPlayer.setVolume(this.value)
+    setStorage('volValue', volValue)
+    setVolume()
   }
+  // #endregion
 })
-$volBar.oninput = function () {
-  volValue = this.value
-  if (volValue === 0) {
-    isMuted = 'yes'
-    setStorage('isMuted', isMuted)
-  }
-  audioObj.volume = this.value
-  setStorage('volValue', volValue)
-  setVolume()
-}
-// #endregion
