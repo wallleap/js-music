@@ -399,9 +399,6 @@ window.addEventListener('load', () => {
       icon.classList.remove('show')
     })
     $$orderIcons[orderFlag].classList.add('show')
-    if (!$playIcon.classList.contains('hide')) {
-      setStorage('isPlaying', 'no')
-    }
     $volBar.value = volValue
     setVolume()
     setSong()
