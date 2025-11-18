@@ -38,14 +38,30 @@ class AudioPlayer {
 
     // 绑定事件（可通过 on 方法监听）
     this.events = {
-      canplay: [],  // 可以播放时触发
-      play: [], // 播放时触发
-      playing: [], // 正在播放时触发
-      pause: [], // 暂停时触发
-      ended: [], // 播放结束时触发
-      timeupdate: [], // 进度更新时触发
-      volumechange: [], // 音量变化时触发
-      error: [] // 错误时触发
+      abort: [], // 音频加载被中止时触发（如突然切换资源）
+      canplay: [], // 音频已缓冲到可以播放（但可能未完成全部缓冲）
+      canplaythrough: [], // 音频已缓冲到预计可流畅播放至结束（无需再缓冲）
+      durationchange: [], // 音频总时长（duration）发生变化时触发
+      emptied: [], // 音频资源被清空时触发（如加载错误或abort后）
+      encrypted: [], // 检测到加密媒体数据时触发（用于DRM加密内容）
+      ended: [], // 音频播放完成时触发
+      error: [], // 加载或播放出错时触发
+      loadeddata: [], // 音频第一帧数据加载完成时触发
+      loadedmetadata: [], // 音频元数据（时长、编码等）加载完成时触发
+      loadstart: [], // 开始加载音频资源时触发
+      pause: [], // 暂停播放时触发
+      play: [], // 调用play()方法时触发（无论是否成功播放）
+      playing: [], // 音频实际开始播放时触发（已解决缓冲等问题）
+      progress: [], // 浏览器正在下载音频数据时触发（周期性触发）
+      ratechange: [], // 播放速率（playbackRate）改变时触发
+      seeked: [], // 跳转（seek）操作完成时触发
+      seeking: [], // 开始跳转（seek）操作时触发
+      stalled: [], // 浏览器尝试加载但未获得数据时触发（可能缓冲停滞）
+      suspend: [], // 浏览器暂停加载音频（但并非因错误）时触发
+      timeupdate: [], // 播放位置（currentTime）更新时触发（周期性）
+      volumechange: [], // 音量（volume）或静音（muted）状态改变时触发
+      waiting: [], // 播放因缓冲等原因需要暂停时触发
+      waitingforkey: [] // 等待加密密钥时触发（用于DRM）
     }
 
     // 绑定原生事件到自定义事件队列
@@ -196,7 +212,7 @@ class AudioPlayer {
   /** 获取当前播放状态 */
   getState() {
     return {
-      isLoading: this.audio.readyState !== 4, 
+      isLoading: this.audio.readyState !== 4,
       isPaused: this.audio.paused,
       isEnded: this.audio.ended,
       isError: this.audio.error,
